@@ -1,0 +1,58 @@
+/* 📌 Navbar Styles */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: #2c3e50;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+  }
+  
+  /* Ensures navbar does NOT merge with scrollbar */
+  body {
+    padding-top: 70px; /* Space below navbar so content does not overlap */
+    margin-right: 0px;
+    overflow-x: hidden;
+  }
+  
+  /* 📌 Navbar Buttons */
+  .nav-center {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .nav-center button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  
+  .nav-center button:hover {
+    color: #1abc9c;
+  }
+  
+  /* 📌 Logout Button */
+  .nav-right .logout-btn {
+    background: #e74c3c;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  
+  .nav-right .logout-btn:hover {
+    background: #c0392b;
+  }
+  

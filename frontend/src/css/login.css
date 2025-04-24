@@ -1,0 +1,94 @@
+/* General Styling */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;  /* Ensures centering without scroll */
+    background: #f5f7fa;
+    font-family: "Poppins", sans-serif;
+  }
+  
+  /* Login Form */
+  .login-box {
+    width: 350px;
+    padding: 30px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    position: relative; /* Helps keep it centered */
+  }
+  
+  /* Title */
+  .login-box h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #2c3e50;
+  }
+  
+  /* Input Fields */
+  .login-box label {
+    display: block;
+    font-size: 14px;
+    text-align: left;
+    margin-top: 10px;
+    color: #2c3e50;
+  }
+  
+  .login-box input {
+    width: 100%;
+    padding: 12px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+  }
+  
+  .login-box input:focus {
+    border-color: #1abc9c;
+    outline: none;
+    box-shadow: 0px 0px 5px rgba(26, 188, 156, 0.5);
+  }
+  
+  /* Error Message */
+  .error-message {
+    color: red;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+  
+  /* Submit Button */
+  .login-box button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 20px;
+    border: none;
+    background: #1abc9c;
+    color: white;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .login-box button:hover {
+    background: #16a085;
+  }
+  
+  /* Signup Link */
+  .signup-link {
+    margin-top: 15px;
+    font-size: 14px;
+  }
+  
+  .signup-link a {
+    color: #1abc9c;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  .signup-link a:hover {
+    text-decoration: underline;
+  }
+  

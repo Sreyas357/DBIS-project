@@ -1,0 +1,146 @@
+/* user-profile.css */
+
+.user-profile-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.user-profile-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.user-profile-header h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.user-info {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.label {
+    font-weight: bold;
+    color: #555;
+}
+
+.value {
+    color: #222;
+}
+
+.follow-button-wrapper {
+    margin-top: 10px;
+}
+
+.follow-btn,
+.following-btn {
+    padding: 8px 16px;
+    font-size: 0.95rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+}
+
+.follow-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+}
+
+.follow-btn:hover {
+    background-color: #0056b3;
+}
+
+.following-btn {
+    background-color: #e0e0e0;
+    color: #333;
+    border: 1px solid #ccc;
+}
+
+.following-btn:hover {
+    background-color: #ff4d4d;
+    color: white;
+    border-color: #ff4d4d;
+}
+
+/* Book list */
+.rated-books-section {
+    margin-top: 40px;
+}
+
+.rated-books-section h2 {
+    font-size: 1.5rem;
+    color: #444;
+    margin-bottom: 20px;
+}
+
+.books-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.book-card {
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    background-color: #fafafa;
+}
+
+.book-title {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.book-author {
+    font-size: 0.95rem;
+    color: #666;
+}
+
+.book-rating {
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+}
+
+.rating-value {
+    color: #999;
+}
+
+.book-comment {
+    margin-top: 10px;
+    font-style: italic;
+    color: #555;
+}
+
+.loading-spinner,
+.error-message,
+.not-found,
+.no-books {
+    text-align: center;
+    color: #999;
+    font-size: 1.1rem;
+    margin-top: 40px;
+}
+ 
