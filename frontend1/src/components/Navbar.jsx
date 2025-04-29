@@ -35,6 +35,8 @@ const Navbar = () => {
         {/* <button onClick={() => navigate("/tvshows")}>TV Shows</button> */}
         <button onClick={() => navigate("/profile")}>Profile</button>
         <button onClick={() => navigate("/messages")}>Messages</button>
+        <button onClick={() => navigate("/temp")}> Temp </button>
+        <button onClick={() => navigate("/threads")} > Threads</button>
       </div>
 
       <div className="nav-right">

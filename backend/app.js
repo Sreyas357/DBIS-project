@@ -410,8 +410,6 @@ app.post('/rate-book', async (req, res) => {
 
 
 
-
-
 /////////////////////////////////////////////////////////////
 app.get('/user/profile', async (req, res) => {
   try {

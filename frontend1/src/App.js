@@ -11,6 +11,8 @@ import BookDetails from "./pages/BookDetails";
 import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
 import Messages from "./pages/Messages";
+import Temp from "./pages/Temp"
+import Threads from "./pages/Threads"
 
 function App() {
   return (
@@ -25,7 +27,9 @@ function App() {
       <Route path="/tvshows" element={<TVShows />} />
       <Route path="/user/:username" element={<UserProfile />} />
       <Route path="/messages" element={<Messages />} />
+      <Route path="/temp" element={<Temp />} />
       <Route path="/messages/:userId" element={<Messages />} />
+      <Route path="/threads" element={<Threads />} />
       <Route path="*" element={<NotFound />} />
       {/* Add more routes as needed */}
     </Routes>

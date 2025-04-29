@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import { apiUrl } from "../config/config";
 import "../css/books.css";
 import StarRating from '../components/StarRating';
+import { FaSearch, FaTimes, FaBook } from 'react-icons/fa'; // Import icons
 
 const Books = () => {
     const navigate = useNavigate();
@@ -17,9 +18,12 @@ const Books = () => {
     const [searchedBooks, setSearchedBooks] = useState([]);
     const [sortOption, setSortOption] = useState("default");
     const [userReviews, setUserReviews] = useState({});
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchType, setSearchType] = useState("all"); // all, title, author
 
     const fetchBooksData = async () => {
         try {
+            setIsLoading(true);
             const res = await fetch(`${apiUrl}/books-data`, {
                 method: "GET",
                 credentials: "include",
@@ -34,8 +38,10 @@ const Books = () => {
             setSearchedBooks(data.books); // Initial search
             setGenres(data.genres);
             setBookGenres(data.bookGenres);
+            setIsLoading(false);
         } catch (error) {
             console.error("Error fetching books:", error);
+            setIsLoading(false);
         }
     };
 
@@ -85,7 +91,7 @@ const Books = () => {
         };
 
         checkStatus();
-    }, [navigate]);
+    }, [navigate, fetchUserReviews]);
 
     const handleGenreClick = (genre) => {
         if (genre === null) {
@@ -112,16 +118,17 @@ const Books = () => {
                 .filter(bg => genreIds.includes(bg.genre_id))
                 .map(bg => bg.book_id);
 
-            const bookGenreCounts = filteredBookIds.reduce((acc, bookId) => {
-                acc[bookId] = (acc[bookId] || 0) + 1;
-                return acc;
-            }, {});
+            // const bookGenreCounts = filteredBookIds.reduce((acc, bookId) => {
+            //     acc[bookId] = (acc[bookId] || 0) + 1;
+            //     return acc;
+            // }, {});
 
-            const fullyMatchedBooks = books.filter(book =>
-                bookGenreCounts[book.id] === selectedGenres.length
+            const MatchedBooks = books.filter(book =>
+                // bookGenreCounts[book.id] === selectedGenres.length
+                filteredBookIds.includes(book.id)
             );
 
-            setFilteredBooks(fullyMatchedBooks);
+            setFilteredBooks(MatchedBooks);
         } else {
             setFilteredBooks(books);
         }
@@ -137,6 +144,8 @@ const Books = () => {
                 return [...booksToSort].sort((a, b) => b.avg_rating - a.avg_rating);
             case "reviews":
                 return [...booksToSort].sort((a, b) => b.num_reviews - a.num_reviews);
+            case "recent":
+                return [...booksToSort].sort((a, b) => parseInt(b.publishedyear) - parseInt(a.publishedyear));
             default:
                 return [...booksToSort].sort((a, b) => a.id - b.id);
         }
@@ -149,19 +158,36 @@ const Books = () => {
             setSearchedBooks(baseBooks);
         } else {
             const query = searchQuery.toLowerCase();
-            const results = baseBooks.filter(book =>
-                book.title.toLowerCase().includes(query) ||
-                book.author.toLowerCase().includes(query)
-            );
+            let results;
+
+            switch (searchType) {
+                case "title":
+                    results = baseBooks.filter(book =>
+                        book.title.toLowerCase().includes(query)
+                    );
+                    break;
+                case "author":
+                    results = baseBooks.filter(book =>
+                        book.author.toLowerCase().includes(query)
+                    );
+                    break;
+                default: // "all"
+                    results = baseBooks.filter(book =>
+                        book.title.toLowerCase().includes(query) ||
+                        book.author.toLowerCase().includes(query) ||
+                        (book.description && book.description.toLowerCase().includes(query)) // if books.description exists then search for that query
+                    );
+                    break;
+            }
             setSearchedBooks(results);
         }
-    }, [filteredBooks, searchQuery, sortBooks]);
+    }, [filteredBooks, searchQuery, sortBooks, searchType]);
 
     useEffect(() => {
         updateSearchResults();
-    }, [filteredBooks, searchQuery, sortBooks, updateSearchResults]);
+    }, [filteredBooks, searchQuery, sortOption, searchType, updateSearchResults]);
 
-    const handleSearch = () => {
+    const handleSearch = () => { //
         updateSearchResults();
     };
 
@@ -193,7 +219,7 @@ const Books = () => {
             setUserReviews(prev => ({
                 ...prev,
                 [bookId]: newRating > 0
-                    ? { rating: newRating, comment: null }
+                    ? { rating: newRating, comment: null } // comment
                     : undefined
             }));
         } catch (error) {
@@ -202,13 +228,19 @@ const Books = () => {
         }
     };
 
+    // Function to handle image load errors
+    const handleImageError = (e) => {
+        e.target.onerror = null; // Prevent infinite loop
+        e.target.src = '/default-book-cover.jpg'; // Default image path
+    };
+
     return (
         <>
             <Navbar />
             <div className="books-page">
                 <div className="sidebar">
                     <h3>Genres</h3>
-                    <ul>
+                    <ul className="genre-list">
                         <li
                             key="all"
                             onClick={() => handleGenreClick(null)}
@@ -234,19 +266,38 @@ const Books = () => {
                 <div className="books-container">
                     <div className="controls-container">
                         <div className="search-container">
-                            <input
-                                type="text"
-                                placeholder="Search by title or author..."
-                                className="search-bar"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                            />
-                            <button className="search-button" onClick={handleSearch}>Search</button>
-                            <button className="clear-button" onClick={() => {
-                                setSearchQuery("");
-                                handleSearch();
-                            }}>Clear</button>
+                            <div className="search-input-wrapper">
+                                <FaSearch className="search-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="Search books..."
+                                    className="search-bar"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                />
+                                {searchQuery && (
+                                    <FaTimes 
+                                        className="clear-search-icon" 
+                                        onClick={() => {
+                                            setSearchQuery("");
+                                            handleSearch();
+                                        }}
+                                    />
+                                )}
+                            </div>
+                            <div className="search-options">
+                                <select
+                                    className="search-type-select"
+                                    value={searchType}
+                                    onChange={(e) => setSearchType(e.target.value)}
+                                >
+                                    <option value="all">All Fields</option>
+                                    <option value="title">Title Only</option>
+                                    <option value="author">Author Only</option>
+                                </select>
+                                <button className="search-button" onClick={handleSearch}>Search</button>
+                            </div>
                         </div>
 
                         <div className="sort-container">
@@ -259,25 +310,51 @@ const Books = () => {
                                 <option value="default">Default</option>
                                 <option value="title-asc">Title (A-Z)</option>
                                 <option value="title-desc">Title (Z-A)</option>
-                                <option value="rating">Rating</option>
-                                <option value="reviews">Number of Reviews</option>
+                                <option value="rating">Highest Rating</option>
+                                <option value="reviews">Most Reviews</option>
+                                <option value="recent">Most Recent</option>
                             </select>
                         </div>
                     </div>
 
-                    {searchedBooks.length > 0 ? (
+                    {isLoading ? (
+                        <div className="loading-container">
+                            <div className="loader"></div>
+                            <p>Loading books...</p>
+                        </div>
+                    ) : searchedBooks.length > 0 ? (
                         <div className="books-grid">
                             {searchedBooks.map((book) => (
                                 <div key={book.id} className="book-card">
-                                    <Link to={`/books/${book.id}`} className="book-title-link">
-                                        <div className="book-image-placeholder">{book.title}</div>
+                                    <Link to={`/books/${book.id}`} className="book-cover-link">
+                                        {book.coverurl ? (
+                                            <img 
+                                                src={book.coverurl} 
+                                                alt={book.title}
+                                                className="book-cover" 
+                                                onError={handleImageError}
+                                            />
+                                        ) : (
+                                            <div className="book-cover-placeholder">
+                                                <FaBook className="book-icon" />
+                                                <span>{book.title}</span>
+                                            </div>
+                                        )}
                                     </Link>
                                     <div className="book-info">
-                                        <p className="author">{book.author}</p>
+                                        <Link to={`/books/${book.id}`} className="book-title-link">
+                                            <h3 className="book-title">{book.title}</h3>
+                                        </Link>
+                                        <p className="author">by {book.author}</p>
+                                        <p className="published-year">{book.publishedyear || 'Unknown'}</p>
                                         <div className="rating-container">
                                             <div className="avg-rating">
+                                                <StarRating
+                                                    rating={book.avg_rating || 0}
+                                                    interactive={false}
+                                                />
                                                 <span className="rating-text">
-                                                    Average: {book.avg_rating} ({book.num_ratings} ratings)
+                                                    {book.avg_rating} ({book.num_ratings})
                                                 </span>
                                             </div>
                                             <div className="user-rating">
@@ -294,7 +371,19 @@ const Books = () => {
                             ))}
                         </div>
                     ) : (
-                        <p className="no-books-message">No books found matching your criteria.</p>
+                        <div className="no-results">
+                            <FaBook className="no-results-icon" />
+                            <p className="no-books-message">No books found matching your criteria.</p>
+                            <button 
+                                className="reset-search-button"
+                                onClick={() => {
+                                    setSearchQuery("");
+                                    setSelectedGenres([]);
+                                }}
+                            >
+                                Reset Search
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
