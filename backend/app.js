@@ -7,6 +7,9 @@ const { Pool } = require("pg");
 const app = express();
 const port = 4000;
 
+
+
+
 // PostgreSQL connection
 // NOTE: use YOUR postgres username and password here
 const pool = new Pool({
