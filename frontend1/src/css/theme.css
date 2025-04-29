@@ -1,0 +1,235 @@
+:root {
+  /* Light mode variables */
+  --bg-primary: #f5f7fa;
+  --bg-secondary: #ffffff;
+  --border-color: #e4e6eb;
+  --text-primary: #2c3e50;
+  --text-secondary: #606770;
+  --accent-color: #7289da;
+  --accent-hover: #5e77d4;
+  --button-primary: #7289da;
+  --button-primary-hover: #5e77d4;
+  --button-secondary: #f0f2f5;
+  --button-secondary-hover: #e4e6eb;
+  --input-bg: #ffffff;
+  --input-border: #e4e6eb;
+  --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --navbar-bg: #ffffff;
+  --transition-speed: 0.3s;
+}
+
+.dark-mode {
+  /* Dark mode variables */
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --border-color: #333333;
+  --text-primary: #e4e6eb;
+  --text-secondary: #aaaaaa;
+  --accent-color: #7289da;
+  --accent-hover: #5e77d4;
+  --button-primary: #7289da;
+  --button-primary-hover: #5e77d4;
+  --button-secondary: #333333;
+  --button-secondary-hover: #444444;
+  --input-bg: #333333;
+  --input-border: #444444;
+  --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  --navbar-bg: #1e1e1e;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+}
+
+/* Theme toggle button styling */
+.theme-toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-speed) ease;
+  margin-left: auto;
+  color: var(--text-primary);
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--button-secondary-hover);
+}
+
+.theme-toggle-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Floating theme toggle button */
+.floating-theme-toggle {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--accent-color);
+  color: white;
+  border: 3px solid white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  animation: pulse 2s infinite;
+}
+
+.dark-mode .floating-theme-toggle {
+  border: 3px solid #333;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(114, 137, 218, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(114, 137, 218, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(114, 137, 218, 0);
+  }
+}
+
+.floating-theme-toggle:hover {
+  transform: scale(1.1);
+  background-color: var(--accent-hover);
+  animation: none;
+}
+
+.floating-theme-toggle svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* Content container for consistent styling */
+.page-container {
+  min-height: calc(100vh - 60px);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 20px;
+  transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+}
+
+.dark-mode .page-container {
+  background-color: var(--bg-primary);
+}
+
+/* Card style for consistent components */
+.content-card {
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--box-shadow);
+  transition: background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+}
+
+.dark-mode .content-card {
+  background-color: var(--bg-secondary);
+}
+
+/* Fix any layout issues from navbar */
+main {
+  min-height: calc(100vh - 60px);
+  position: relative;
+  z-index: 1;
+}
+
+/* Global form elements */
+input, select, textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 15px;
+  transition: all var(--transition-speed) ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(114, 137, 218, 0.2);
+}
+
+.dark-mode input, .dark-mode select, .dark-mode textarea {
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  border-color: var(--input-border);
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Theme toggle container and label */
+.theme-toggle-container {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+}
+
+.theme-toggle-label {
+  position: absolute;
+  right: 70px;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  animation: fadeIn 0.3s ease;
+  border: 1px solid var(--border-color);
+}
+
+.dark-mode .theme-toggle-label {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Theme help message */
+.theme-help-message {
+  position: fixed;
+  bottom: 100px;
+  right: 30px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-size: 14px;
+  z-index: 9998;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  animation: fadeInUp 0.5s ease, fadeOut 0.5s ease 2.5s forwards;
+  pointer-events: none;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+} 

@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useNavigate } from "react-router";
 import "../css/navbar.css"; // Import CSS file
+import { ThemeContext } from "./ThemeContext";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const { isDarkMode } = useContext(ThemeContext);
 
   const handleLogout = async (e) => {
     e.preventDefault();
@@ -24,7 +26,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar">
+    <nav className={`navbar ${isDarkMode ? 'dark-mode' : ''}`}>
       <div className="nav-left">
         <div className="nav-logo" onClick={() => navigate("/dashboard")}>📚 My Library</div>
       </div>

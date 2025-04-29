@@ -61,12 +61,6 @@ app.get("/", (req, res) => {
   res.send("Welcome to the backend API!");
 });
 
-
-
-
-
-
-
 /////////////////////////////////////////////////////////////
 // signup
 app.post('/signup', async (req, res) => {
@@ -119,12 +113,6 @@ app.post('/signup', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
 /////////////////////////////////////////////////////////////
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -157,7 +145,6 @@ app.post("/login", async (req, res) => {
     req.session.userId = user.user_id;
     req.session.username = user.username;
 
-
     // Respond with a success message
     return res.status(200).json({ message: "Login successful" });
 
@@ -167,26 +154,24 @@ app.post("/login", async (req, res) => {
   }
 });
 
-
-
-
-
-
 /////////////////////////////////////////////////////////////
 // TODO: Implement API used to check if the client is currently logged in or not.
 // use correct status codes and messages mentioned in the lab document
 app.get("/isLoggedIn", (req, res) => {
   if (req.session && req.session.userId) {
-    return res.status(200).json({ message: "User is logged in", username: req.session.username });
+    console.log("User is logged in with session:", {
+      userId: req.session.userId,
+      username: req.session.username
+    });
+    return res.status(200).json({
+      message: "User is logged in",
+      username: req.session.username,
+      userId: req.session.userId
+    });
   }
+  console.log("User is not logged in, no valid session found");
   return res.status(400).json({ message: "User is not logged in" });
 });
-
-
-
-
-
-
 
 /////////////////////////////////////////////////////////////
 // TODO: Implement API used to logout the user
@@ -204,12 +189,6 @@ app.get("/logout", (req, res) => {
     res.status(200).json({ message: "Logged out successfully" });
   });
 });
-
-
-
-
-
-
 
 /////////////////////////////////////////////////////////////
 // ✅ Fetch all books, genres, and book_genres
@@ -235,11 +214,6 @@ app.get("/books-data", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch data" });
   }
 });
-
-
-
-
-
 
 /////////////////////////////////////////////////////////////
 app.get('/books/:id', async (req, res) => {
@@ -268,13 +242,6 @@ app.get('/books/:id', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
 /////////////////////////////////////////////////////////////
 // GET /user/reviews - Get all reviews by the current user
 // Get current user's reviews
@@ -299,13 +266,6 @@ app.get('/user/reviews', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch reviews' });
   }
 });
-
-
-
-
-
-
-
 
 /////////////////////////////////////////////////////////////
 app.post('/rate-book', async (req, res) => {
@@ -404,12 +364,6 @@ app.post('/rate-book', async (req, res) => {
 });
 
 
-
-
-
-
-
-
 /////////////////////////////////////////////////////////////
 app.get('/user/profile', async (req, res) => {
   try {
@@ -443,15 +397,6 @@ app.get('/user/profile', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
-
 /////////////////////////////////////////////////////////////
 app.get('/user/search', async (req, res) => {
   const { username } = req.query;
@@ -483,13 +428,6 @@ app.get('/user/search', async (req, res) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 });
-
-
-
-
-
-
-
 
 /////////////////////////////////////////////////////////////
 app.get('/user/:username', async (req, res) => {
@@ -551,13 +489,6 @@ app.get('/user/:username', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
 /////////////////////////////////////////////////////////////
 // === FOLLOW USER ===
 // === TOGGLE FOLLOW ===
@@ -611,21 +542,6 @@ app.post('/user/follow/:username', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /////////////////////////////////////////////////////////////
 // GET /messages/conversations
 app.get('/messages/conversations', async (req, res) => {
@@ -650,17 +566,6 @@ app.get('/messages/conversations', async (req, res) => {
       res.status(500).json({ error: 'Failed to fetch conversations' });
   }
 });
-
-
-
-
-
-
-
-
-
-
-
 
 /////////////////////////////////////////////////////////////
 // GET /messages/:userId
@@ -704,24 +609,6 @@ app.get('/messages/:userId', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /////////////////////////////////////////////////////////////
 // POST /messages/:userId
 app.post('/messages/send', async (req, res) => {
@@ -756,29 +643,6 @@ app.post('/messages/send', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /////////////////////////////////////////////////////////////
 // GET /user/:username
 app.get('/user/messages/:username', async (req, res) => {
@@ -801,18 +665,464 @@ app.get('/user/messages/:username', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
-
-
-
 ////////////////////////////////////////////////////
+// Thread System APIs
+
+// Add thread categories if none exist
+const ensureThreadCategories = async () => {
+  try {
+    const result = await pool.query('SELECT COUNT(*) FROM thread_categories');
+    const count = parseInt(result.rows[0].count);
+    
+    if (count === 0) {
+      console.log('No thread categories found, creating default categories...');
+      await pool.query(`
+        INSERT INTO thread_categories (name, description) VALUES
+        ('Book Discussions', 'General discussions about books'),
+        ('Author Discussions', 'Discussions about authors and their works'),
+        ('Reading Lists', 'Share and discuss reading lists'),
+        ('Book Recommendations', 'Ask for and provide book recommendations'),
+        ('Book Reviews', 'Share your book reviews and ratings')
+      `);
+      console.log('Default thread categories created');
+    } else {
+      console.log(`Found ${count} existing thread categories`);
+    }
+  } catch (err) {
+    console.error('Error checking/creating thread categories:', err);
+  }
+};
+
+// Call this when the app starts
+ensureThreadCategories();
+
+// Get all thread categories
+app.get('/api/threads/categories', async (req, res) => {
+  try {
+    console.log('Fetching thread categories...');
+    const result = await pool.query('SELECT * FROM thread_categories ORDER BY name');
+    console.log('Thread categories fetched:', result.rows);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching thread categories:', err);
+    res.status(500).json({ error: 'Failed to fetch thread categories' });
+  }
+});
+
+// Get all threads with optional filtering
+app.get('/api/threads', async (req, res) => {
+  try {
+    const { category_id, book_id, parent_thread_id, user_id } = req.query;
+    let query = `
+      SELECT t.*, u.username, tc.name as category_name, b.title as book_title,
+             (SELECT COUNT(*) FROM thread_comments WHERE thread_id = t.thread_id) as comment_count
+      FROM threads t
+      JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN thread_categories tc ON t.category_id = tc.category_id
+      LEFT JOIN books b ON t.book_id = b.id
+      WHERE 1=1
+    `;
+    const params = [];
+    let paramIndex = 1;
+
+    if (category_id) {
+      query += ` AND t.category_id = $${paramIndex}`;
+      params.push(category_id);
+      paramIndex++;
+    }
+
+    if (book_id) {
+      query += ` AND t.book_id = $${paramIndex}`;
+      params.push(book_id);
+      paramIndex++;
+    }
+
+    if (parent_thread_id === 'null') {
+      query += ` AND t.parent_thread_id IS NULL`;
+    } else if (parent_thread_id) {
+      query += ` AND t.parent_thread_id = $${paramIndex}`;
+      params.push(parent_thread_id);
+      paramIndex++;
+    }
+
+    if (user_id) {
+      query += ` AND t.user_id = $${paramIndex}`;
+      params.push(user_id);
+      paramIndex++;
+    }
+
+    query += ` ORDER BY t.is_pinned DESC, t.created_at DESC`;
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching threads:', err);
+    res.status(500).json({ error: 'Failed to fetch threads' });
+  }
+});
+
+// Get a single thread by ID
+app.get('/api/threads/:threadId', async (req, res) => {
+  try {
+    const { threadId } = req.params;
+    
+    // Increment view count
+    await pool.query('UPDATE threads SET view_count = view_count + 1 WHERE thread_id = $1', [threadId]);
+    
+    // Get thread details
+    const threadResult = await pool.query(`
+      SELECT t.*, u.username, tc.name as category_name, b.title as book_title
+      FROM threads t
+      JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN thread_categories tc ON t.category_id = tc.category_id
+      LEFT JOIN books b ON t.book_id = b.id
+      WHERE t.thread_id = $1
+    `, [threadId]);
+    
+    if (threadResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Thread not found' });
+    }
+    
+    res.json(threadResult.rows[0]);
+  } catch (err) {
+    console.error('Error fetching thread:', err);
+    res.status(500).json({ error: 'Failed to fetch thread' });
+  }
+});
+
+// Create a new thread
+app.post('/api/threads', isAuthenticated, async (req, res) => {
+  try {
+    console.log("Thread creation request received:", req.body);
+    const { title, content, category_id, book_id, parent_thread_id, custom_book, custom_author } = req.body;
+    const userId = req.session.userId;
+    
+    if (!title || !content) {
+      return res.status(400).json({ error: 'Title and content are required' });
+    }
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'You must be logged in to create a thread' });
+    }
+    
+    // Start a transaction for creating custom book if needed
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      let finalBookId = book_id;
+      
+      // Handle custom book if provided
+      if (custom_book && custom_book.trim() !== '') {
+        console.log("Processing custom book:", custom_book);
+        
+        // Check if a similar book already exists
+        const bookCheckResult = await client.query(
+          'SELECT id FROM books WHERE LOWER(title) = LOWER($1) AND LOWER(author) = LOWER($2)',
+          [custom_book.trim(), custom_author ? custom_author.trim() : 'Unknown']
+        );
+        
+        if (bookCheckResult.rows.length > 0) {
+          // Use existing book
+          console.log("Found existing book with same title/author");
+          finalBookId = bookCheckResult.rows[0].id;
+        } else {
+          // Check what columns exist in the books table
+          const tableInfoResult = await client.query(`
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'books'
+          `);
+          console.log("Books table columns:", tableInfoResult.rows);
+          
+          // Create new book with appropriate fields
+          const hasDescriptionField = tableInfoResult.rows.some(col => col.column_name === 'description');
+          const hasImageField = tableInfoResult.rows.some(col => col.column_name === 'image_url');
+          const hasPublishedField = tableInfoResult.rows.some(col => col.column_name === 'published');
+          
+          // Build the dynamic SQL based on available columns
+          let insertColumns = 'title, author';
+          let insertValues = '$1, $2';
+          const insertParams = [custom_book.trim(), custom_author ? custom_author.trim() : 'Unknown'];
+          let valueIndex = 3;
+          
+          if (hasDescriptionField) {
+            insertColumns += ', description';
+            insertValues += `, $${valueIndex++}`;
+            insertParams.push('No description available');
+          }
+          
+          if (hasImageField) {
+            insertColumns += ', image_url';
+            insertValues += `, $${valueIndex++}`;
+            insertParams.push('');
+          }
+          
+          if (hasPublishedField) {
+            insertColumns += ', published';
+            insertValues += `, $${valueIndex++}`;
+            insertParams.push(new Date().getFullYear());
+          }
+          
+          // Add timestamps
+          const hasCreatedAt = tableInfoResult.rows.some(col => col.column_name === 'created_at');
+          const hasUpdatedAt = tableInfoResult.rows.some(col => col.column_name === 'updated_at');
+          
+          if (hasCreatedAt) {
+            insertColumns += ', created_at';
+            insertValues += ', NOW()';
+          }
+          
+          if (hasUpdatedAt) {
+            insertColumns += ', updated_at';
+            insertValues += ', NOW()';
+          }
+          
+          const insertQuery = `
+            INSERT INTO books (${insertColumns}) 
+            VALUES (${insertValues}) 
+            RETURNING id
+          `;
+          
+          console.log("Creating new book with query:", insertQuery);
+          console.log("Query parameters:", insertParams);
+          
+          const newBookResult = await client.query(insertQuery, insertParams);
+          
+          finalBookId = newBookResult.rows[0].id;
+          console.log("Created new book with ID:", finalBookId);
+        }
+      }
+      
+      // Verify parent thread exists if specified
+      if (parent_thread_id) {
+        const parentThreadCheck = await client.query(
+          'SELECT thread_id FROM threads WHERE thread_id = $1',
+          [parent_thread_id]
+        );
+        
+        if (parentThreadCheck.rows.length === 0) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: 'Parent thread does not exist' });
+        }
+      }
+      
+      // Create the thread
+      console.log("Creating thread with book_id:", finalBookId);
+      const result = await client.query(`
+        INSERT INTO threads (title, content, user_id, category_id, book_id, parent_thread_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+      `, [title, content, userId, category_id || null, finalBookId || null, parent_thread_id || null]);
+      
+      await client.query('COMMIT');
+      
+      // Return the created thread
+      console.log("Thread created successfully:", result.rows[0]);
+      res.status(201).json(result.rows[0]);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error("Database error in thread creation:", err);
+      console.error("Error details:", err.stack);
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Error creating thread:', err);
+    res.status(500).json({ error: 'Failed to create thread: ' + err.message });
+  }
+});
+
+// Update a thread
+app.put('/api/threads/:threadId', isAuthenticated, async (req, res) => {
+  try {
+    const { threadId } = req.params;
+    const { title, content, category_id, book_id, is_pinned, is_locked } = req.body;
+    const userId = req.session.userId;
+    
+    // Check if user is the author of the thread
+    const threadResult = await pool.query('SELECT user_id FROM threads WHERE thread_id = $1', [threadId]);
+    
+    if (threadResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Thread not found' });
+    }
+    
+    if (threadResult.rows[0].user_id !== userId) {
+      return res.status(403).json({ error: 'You are not authorized to update this thread' });
+    }
+    
+    const result = await pool.query(`
+      UPDATE threads
+      SET title = $1, content = $2, category_id = $3, book_id = $4, updated_at = NOW()
+      WHERE thread_id = $5 AND user_id = $6
+      RETURNING *
+    `, [title, content, category_id || null, book_id || null, threadId, userId]);
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating thread:', err);
+    res.status(500).json({ error: 'Failed to update thread' });
+  }
+});
+
+// Delete a thread
+app.delete('/api/threads/:threadId', isAuthenticated, async (req, res) => {
+  try {
+    const { threadId } = req.params;
+    const userId = req.session.userId;
+    
+    // Check if user is the author of the thread
+    const threadResult = await pool.query('SELECT user_id FROM threads WHERE thread_id = $1', [threadId]);
+    
+    if (threadResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Thread not found' });
+    }
+    
+    if (threadResult.rows[0].user_id !== userId) {
+      return res.status(403).json({ error: 'You are not authorized to delete this thread' });
+    }
+    
+    await pool.query('DELETE FROM threads WHERE thread_id = $1', [threadId]);
+    
+    res.json({ message: 'Thread deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting thread:', err);
+    res.status(500).json({ error: 'Failed to delete thread' });
+  }
+});
+
+// Get comments for a thread
+app.get('/api/threads/:threadId/comments', async (req, res) => {
+  try {
+    const { threadId } = req.params;
+    
+    const result = await pool.query(`
+      SELECT tc.*, u.username,
+      CASE WHEN tc.parent_id IS NULL THEN 'comment' ELSE 'reply' END as comment_type
+      FROM thread_comments tc
+      JOIN users u ON tc.user_id = u.user_id
+      WHERE tc.thread_id = $1
+      ORDER BY tc.created_at ASC
+    `, [threadId]);
+    
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching comments:', err);
+    res.status(500).json({ error: 'Failed to fetch comments' });
+  }
+});
+
+// Add a comment to a thread
+app.post('/api/threads/:threadId/comments', isAuthenticated, async (req, res) => {
+  try {
+    const { threadId } = req.params;
+    const { content, parentId } = req.body;
+    const userId = req.session.userId;
+    
+    if (!content) {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+    
+    const result = await pool.query(`
+      INSERT INTO thread_comments (thread_id, user_id, content, parent_id)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+    `, [threadId, userId, content, parentId || null]);
+    
+    // Get the username to return with the new comment
+    const userResult = await pool.query('SELECT username FROM users WHERE user_id = $1', [userId]);
+    const comment = {
+      ...result.rows[0],
+      username: userResult.rows[0].username
+    };
+    
+    res.status(201).json(comment);
+  } catch (err) {
+    console.error('Error adding comment:', err);
+    res.status(500).json({ error: 'Failed to add comment' });
+  }
+});
+
+// Update a comment
+app.put('/api/comments/:commentId', isAuthenticated, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const { content } = req.body;
+    const userId = req.session.userId;
+    
+    // Check if user is the author of the comment
+    const commentResult = await pool.query('SELECT user_id FROM thread_comments WHERE comment_id = $1', [commentId]);
+    
+    if (commentResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+    
+    if (commentResult.rows[0].user_id !== userId) {
+      return res.status(403).json({ error: 'You are not authorized to update this comment' });
+    }
+    
+    const result = await pool.query(`
+      UPDATE thread_comments
+      SET content = $1, updated_at = NOW()
+      WHERE comment_id = $2 AND user_id = $3
+      RETURNING *
+    `, [content, commentId, userId]);
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating comment:', err);
+    res.status(500).json({ error: 'Failed to update comment' });
+  }
+});
+
+// Delete a comment
+app.delete('/api/comments/:commentId', isAuthenticated, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.session.userId;
+    
+    // Check if user is the author of the comment
+    const commentResult = await pool.query('SELECT user_id FROM thread_comments WHERE comment_id = $1', [commentId]);
+    
+    if (commentResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+    
+    if (commentResult.rows[0].user_id !== userId) {
+      return res.status(403).json({ error: 'You are not authorized to delete this comment' });
+    }
+    
+    await pool.query('DELETE FROM thread_comments WHERE comment_id = $1', [commentId]);
+    
+    res.json({ message: 'Comment deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting comment:', err);
+    res.status(500).json({ error: 'Failed to delete comment' });
+  }
+});
+
+// Get replies for a comment
+app.get('/api/comments/:commentId/replies', async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    
+    const result = await pool.query(`
+      SELECT tc.*, u.username
+      FROM thread_comments tc
+      JOIN users u ON tc.user_id = u.user_id
+      WHERE tc.parent_id = $1
+      ORDER BY tc.created_at ASC
+    `, [commentId]);
+    
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching replies:', err);
+    res.status(500).json({ error: 'Failed to fetch replies' });
+  }
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

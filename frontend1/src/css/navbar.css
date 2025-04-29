@@ -1,58 +1,109 @@
 /* 📌 Navbar Styles */
 .navbar {
-    position: fixed;
+    position: sticky;
     top: 0;
     left: 0;
     width: 100%;
     height: 60px;
-    background: #2c3e50;
-    color: white;
+    background-color: var(--navbar-bg, #ffffff);
+    color: var(--text-primary, #2c3e50);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
-    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
+    padding: 10px 40px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     z-index: 1000;
+    transition: background-color var(--transition-speed, 0.3s) ease, box-shadow var(--transition-speed, 0.3s) ease;
   }
   
-  /* Ensures navbar does NOT merge with scrollbar */
+  .navbar.dark-mode {
+    background-color: var(--navbar-bg, #1e1e1e);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Ensures content doesn't overlap with navbar */
   body {
-    padding-top: 70px; /* Space below navbar so content does not overlap */
+    padding-top: 0; /* Removing this as it causes issues with sticky navbar */
     margin-right: 0px;
     overflow-x: hidden;
   }
   
-  /* 📌 Navbar Buttons */
+  /* 📌 Navbar Layout */
+  .nav-left, .nav-right {
+    display: flex;
+    align-items: center;
+  }
+  
+  .nav-logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    color: var(--text-primary, #2c3e50);
+    transition: color var(--transition-speed, 0.3s) ease;
+  }
+  
+  .dark-mode .nav-logo {
+    color: var(--text-primary, #e4e6eb);
+  }
+  
   .nav-center {
     display: flex;
-    gap: 20px;
+    gap: 15px;
   }
   
   .nav-center button {
     background: none;
     border: none;
-    color: white;
-    font-size: 16px;
+    padding: 8px 15px;
+    font-size: 1rem;
     cursor: pointer;
-    transition: 0.3s;
+    border-radius: 4px;
+    color: var(--text-primary, #2c3e50);
+    transition: background-color var(--transition-speed, 0.3s) ease, color var(--transition-speed, 0.3s) ease;
   }
   
   .nav-center button:hover {
-    color: #1abc9c;
+    background-color: var(--button-secondary-hover, #e4e6eb);
+    color: var(--accent-color, #7289da);
+  }
+  
+  .dark-mode .nav-center button {
+    color: var(--text-primary, #e4e6eb);
+  }
+  
+  .dark-mode .nav-center button:hover {
+    background-color: var(--button-secondary-hover, #444444);
   }
   
   /* 📌 Logout Button */
-  .nav-right .logout-btn {
-    background: #e74c3c;
-    padding: 8px 15px;
-    border: none;
-    border-radius: 5px;
+  .logout-btn {
+    background-color: var(--button-primary, #7289da);
     color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-weight: bold;
     cursor: pointer;
-    transition: 0.3s;
+    transition: background-color var(--transition-speed, 0.3s) ease;
+    margin-left: 10px;
   }
   
-  .nav-right .logout-btn:hover {
-    background: #c0392b;
+  .logout-btn:hover {
+    background-color: var(--button-primary-hover, #5e77d4);
+  }
+  
+  /* Mobile responsiveness */
+  @media (max-width: 768px) {
+    .navbar {
+      padding: 10px 20px;
+    }
+    
+    .nav-center {
+      display: none; /* Hide on mobile, add a mobile menu toggle if needed */
+    }
+    
+    .nav-logo {
+      font-size: 1.2rem;
+    }
   }
   
