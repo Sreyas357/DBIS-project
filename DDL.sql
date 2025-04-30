@@ -124,11 +124,10 @@ CREATE TABLE thread_comments (
 CREATE TABLE thread_replies (
     reply_id SERIAL PRIMARY KEY,
     comment_id INTEGER REFERENCES thread_comments(comment_id) ON DELETE CASCADE,
-    reply_parent_id INTEGER DEFAULT -1 REFERENCES thread_replies(reply_id) ON DELETE CASCADE, -- -1 means reply is to a comment, not another reply  
     user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Insert default thread categories
