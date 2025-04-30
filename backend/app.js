@@ -1002,8 +1002,7 @@ app.get('/api/threads/:threadId/comments', async (req, res) => {
     const { threadId } = req.params;
     
     const result = await pool.query(`
-      SELECT tc.*, u.username,
-      CASE WHEN tc.parent_id IS NULL THEN 'comment' ELSE 'reply' END as comment_type
+      SELECT tc.*, u.username, 'comment' as comment_type
       FROM thread_comments tc
       JOIN users u ON tc.user_id = u.user_id
       WHERE tc.thread_id = $1
@@ -1021,7 +1020,7 @@ app.get('/api/threads/:threadId/comments', async (req, res) => {
 app.post('/api/threads/:threadId/comments', isAuthenticated, async (req, res) => {
   try {
     const { threadId } = req.params;
-    const { content, parentId } = req.body;
+    const { content } = req.body;
     const userId = req.session.userId;
     
     if (!content) {
@@ -1029,10 +1028,10 @@ app.post('/api/threads/:threadId/comments', isAuthenticated, async (req, res) =>
     }
     
     const result = await pool.query(`
-      INSERT INTO thread_comments (thread_id, user_id, content, parent_id)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO thread_comments (thread_id, user_id, content)
+      VALUES ($1, $2, $3)
       RETURNING *
-    `, [threadId, userId, content, parentId || null]);
+    `, [threadId, userId, content]);
     
     // Get the username to return with the new comment
     const userResult = await pool.query('SELECT username FROM users WHERE user_id = $1', [userId]);
@@ -1112,17 +1111,55 @@ app.get('/api/comments/:commentId/replies', async (req, res) => {
     const { commentId } = req.params;
     
     const result = await pool.query(`
-      SELECT tc.*, u.username
-      FROM thread_comments tc
-      JOIN users u ON tc.user_id = u.user_id
-      WHERE tc.parent_id = $1
-      ORDER BY tc.created_at ASC
+      SELECT tr.*, u.username
+      FROM thread_replies tr
+      JOIN users u ON tr.user_id = u.user_id
+      WHERE tr.comment_id = $1
+      ORDER BY tr.created_at ASC
     `, [commentId]);
     
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching replies:', err);
     res.status(500).json({ error: 'Failed to fetch replies' });
+  }
+});
+
+// Add a reply to a comment
+app.post('/api/comments/:commentId/replies', isAuthenticated, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const { content, parent_reply_id } = req.body;
+    const userId = req.session.userId;
+    
+    if (!content) {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+    
+    // Verify the comment exists
+    const commentCheck = await pool.query('SELECT comment_id FROM thread_comments WHERE comment_id = $1', [commentId]);
+    if (commentCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+    
+    // Insert the reply
+    const result = await pool.query(`
+      INSERT INTO thread_replies (comment_id, reply_parent_id, user_id, content)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+    `, [commentId, parent_reply_id || null, userId, content]);
+    
+    // Get the username to return with the new reply
+    const userResult = await pool.query('SELECT username FROM users WHERE user_id = $1', [userId]);
+    const reply = {
+      ...result.rows[0],
+      username: userResult.rows[0].username
+    };
+    
+    res.status(201).json(reply);
+  } catch (err) {
+    console.error('Error adding reply:', err);
+    res.status(500).json({ error: 'Failed to add reply' });
   }
 });
 
