@@ -144,10 +144,13 @@ async function insertBooks(books) {
         bookId = existingBook.rows[0].id;
         console.log(`Book "${book.title}" already exists, skipping insert.`);
       } else {
-        // Insert new book
+        // Insert new book - updated to match current schema
         const resBook = await pool.query(
-          `INSERT INTO books(title, author, description, coverurl, publishedyear, pagecount, publisher, rating) 
-          VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
+          `INSERT INTO books(
+            title, author, description, coverurl, publishedyear, 
+            pagecount, publisher, avg_rating, num_ratings, num_reviews
+          ) 
+          VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
           RETURNING id`,
           [
             book.title, 
@@ -157,7 +160,9 @@ async function insertBooks(books) {
             book.publishedYear,
             book.pageCount === "Unknown" ? null : book.pageCount,
             book.publisher,
-            book.rating === "Not rated" ? null : book.rating
+            book.rating === "Not rated" ? 0 : Number(book.rating),
+            0, // Initialize num_ratings as 0
+            0  // Initialize num_reviews as 0
           ]
         );
         

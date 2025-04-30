@@ -326,7 +326,16 @@ const Books = () => {
                         <div className="books-grid">
                             {searchedBooks.map((book) => (
                                 <div key={book.id} className="book-card">
-                                    <Link to={`/books/${book.id}`} className="book-cover-link">
+                                    <Link 
+                                        to={`/books/${book.id}`} 
+                                        className="book-cover-link"
+                                        onClick={(e) => {
+                                            // Prevent the default if the click was on a child element that has its own handler
+                                            if (e.target !== e.currentTarget && e.target.tagName !== 'IMG') {
+                                                e.stopPropagation();
+                                            }
+                                        }}
+                                    >
                                         {book.coverurl ? (
                                             <img 
                                                 src={book.coverurl} 
@@ -342,7 +351,11 @@ const Books = () => {
                                         )}
                                     </Link>
                                     <div className="book-info">
-                                        <Link to={`/books/${book.id}`} className="book-title-link">
+                                        <Link 
+                                            to={`/books/${book.id}`} 
+                                            className="book-title-link"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
                                             <h3 className="book-title">{book.title}</h3>
                                         </Link>
                                         <p className="author">by {book.author}</p>

@@ -4,6 +4,7 @@ import { apiUrl } from '../config/config';
 import Navbar from '../components/Navbar';
 import StarRating from '../components/StarRating';
 import '../css/book-details.css';
+import { FaBook, FaArrowLeft } from 'react-icons/fa';
 
 const BookDetails = () => {
     const { id } = useParams();
@@ -61,11 +62,16 @@ const BookDetails = () => {
         const fetchData = async () => {
             try {
                 setBookData(prev => ({ ...prev, loading: true, error: null }));
+                console.log(`Fetching book with ID: ${id}`); // Debug logging
 
                 const bookResponse = await fetch(`${apiUrl}/books/${id}`);
-                if (!bookResponse.ok) throw new Error('Failed to fetch book');
+                if (!bookResponse.ok) {
+                    console.error(`Book fetch error: ${bookResponse.status}`);
+                    throw new Error('Failed to fetch book');
+                }
 
                 const bookData = await bookResponse.json();
+                console.log('Book data received:', bookData); // Debug logging
 
                 try {
                     const reviewResponse = await fetch(`${apiUrl}/user/reviews`, {
@@ -73,7 +79,7 @@ const BookDetails = () => {
                     });
                     if (reviewResponse.ok) {
                         const reviews = await reviewResponse.json();
-                        setUserReview(reviews.find(r => r.book_id === id));
+                        setUserReview(reviews.find(r => r.book_id == id)); // Use == for type coercion
                     }
                 } catch (e) {
                     console.log("No user review found");
@@ -86,6 +92,7 @@ const BookDetails = () => {
                     error: null
                 });
             } catch (error) {
+                console.error('Error fetching book:', error);
                 setBookData(prev => ({
                     ...prev,
                     loading: false,
@@ -94,14 +101,58 @@ const BookDetails = () => {
             }
         };
 
-        fetchData();
+        if (id) {
+            fetchData();
+        } else {
+            setBookData(prev => ({
+                ...prev,
+                loading: false,
+                error: 'Invalid book ID'
+            }));
+        }
     }, [id]);
 
     const { book, genres, loading, error } = bookData;
 
-    if (loading) return <div className="loading-container">Loading...</div>;
-    if (error) return <div className="error-container">{error}</div>;
-    if (!book) return <div className="not-found-container">Book not found</div>;
+    // Handle image load errors
+    const handleImageError = (e) => {
+        e.target.onerror = null; // Prevent infinite loop
+        e.target.src = '/default-book-cover.jpg'; // Default image path
+    };
+
+    if (loading) return (
+        <>
+            <Navbar />
+            <div className="loading-container">
+                <div className="loader"></div>
+                <p>Loading book details...</p>
+            </div>
+        </>
+    );
+    
+    if (error) return (
+        <>
+            <Navbar />
+            <div className="error-container">
+                <p>Error: {error}</p>
+                <button className="back-button" onClick={() => navigate('/books')}>
+                    <FaArrowLeft /> Return to Books
+                </button>
+            </div>
+        </>
+    );
+    
+    if (!book) return (
+        <>
+            <Navbar />
+            <div className="not-found-container">
+                <p>Book not found</p>
+                <button className="back-button" onClick={() => navigate('/books')}>
+                    <FaArrowLeft /> Return to Books
+                </button>
+            </div>
+        </>
+    );
 
     return (
         <>
@@ -109,8 +160,25 @@ const BookDetails = () => {
             <div className="book-details-page">
                 <div className="book-details-card">
                     <div className="book-details-header">
-                        <h1>{book.title}</h1>
-                        <h2>by {book.author}</h2>
+                        <div className="book-cover-container">
+                            {book.coverurl ? (
+                                <img 
+                                    src={book.coverurl} 
+                                    alt={book.title}
+                                    className="book-cover-large" 
+                                    onError={handleImageError}
+                                />
+                            ) : (
+                                <div className="book-cover-placeholder-large">
+                                    <FaBook className="book-icon" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="book-header-text">
+                            <h1>{book.title}</h1>
+                            <h2>by {book.author}</h2>
+                            <p className="published-year">{book.publishedyear || 'Unknown'}</p>
+                        </div>
                     </div>
 
                     <div className="book-details-content">
@@ -139,7 +207,7 @@ const BookDetails = () => {
                                 <div className="user-rating">
                                     <span>Your rating:</span>
                                     <StarRating
-                                        rating={userReview === null ? (book.avg_rating || 0) : userReview.rating}
+                                        rating={userReview?.rating || 0}
                                         interactive={true}
                                         onRate={handleRateBook}
                                     />
@@ -155,7 +223,7 @@ const BookDetails = () => {
                         </div>
 
                         <button className="back-button" onClick={() => navigate(-1)}>
-                            ← Back to Books
+                            <FaArrowLeft /> Back to Books
                         </button>
                     </div>
                 </div>

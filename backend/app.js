@@ -269,8 +269,10 @@ app.post('/rate-book', async (req, res) => {
 
     const { book_id, rating } = req.body;
 
+    console.log(`Processing rating: Book ID=${book_id}, Rating=${rating}, User ID=${userId}`);
+
     // 2. Validate input
-    if (!book_id || rating < 1 || rating > 5) {
+    if (!book_id || rating < 0 || rating > 5) {
       return res.status(400).json({ error: 'Invalid book_id or rating' });
     }
 
@@ -283,28 +285,46 @@ app.post('/rate-book', async (req, res) => {
     );
     const prevRating = prevRes.rows[0]?.rating;
 
+    console.log(`Previous rating: ${prevRating || 'none'}`);
+
     let newAvg = 0;
     let newCount = 0;
 
     // 4. Get current book stats
     const bookRes = await client.query(
-      `SELECT avg_rating, num_ratings FROM books WHERE id = $1 FOR UPDATE`,
+      `SELECT avg_rating, num_ratings FROM books WHERE id = $1`,
       [book_id]
     );
-    const { avg_rating, num_ratings } = bookRes.rows[0];
+    
+    if (bookRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Book not found' });
+    }
+
+    const { avg_rating = 0, num_ratings = 0 } = bookRes.rows[0];
+
+    console.log(`Current book stats: avg_rating=${avg_rating}, num_ratings=${num_ratings}`);
 
     // 5. Handle rating logic
     if (prevRating === undefined) {
       // New rating
-      await client.query(
-        `INSERT INTO user_book_reviews (book_id, user_id, rating, updated_at)
-         VALUES ($1, $2, $3, NOW())`,
-        [book_id, userId, rating]
-      );
-      newCount = num_ratings + 1;
-      newAvg = ((avg_rating * num_ratings) + rating) / newCount;
-
-    } else if (prevRating === rating) {
+      if (rating > 0) {
+        await client.query(
+          `INSERT INTO user_book_reviews (book_id, user_id, rating, updated_at)
+           VALUES ($1, $2, $3, NOW())`,
+          [book_id, userId, rating]
+        );
+        newCount = num_ratings + 1;
+        newAvg = ((avg_rating * num_ratings) + rating) / newCount;
+      } else {
+        // Skip if trying to add a 0 rating
+        await client.query('COMMIT');
+        return res.status(200).json({
+          avg_rating: Number(avg_rating),
+          num_ratings: num_ratings
+        });
+      }
+    } else if (rating === 0 || prevRating === rating) {
       // Remove rating
       await client.query(
         `DELETE FROM user_book_reviews WHERE book_id = $1 AND user_id = $2`,
@@ -313,9 +333,8 @@ app.post('/rate-book', async (req, res) => {
 
       newCount = num_ratings - 1;
       newAvg = newCount > 0
-        ? ((avg_rating * num_ratings) - rating) / newCount
+        ? ((avg_rating * num_ratings) - prevRating) / newCount
         : 0;
-
     } else {
       // Update rating
       await client.query(
@@ -327,6 +346,12 @@ app.post('/rate-book', async (req, res) => {
       newCount = num_ratings;
       newAvg = ((avg_rating * num_ratings) - prevRating + rating) / newCount;
     }
+
+    // Ensure values are valid
+    newCount = Math.max(0, newCount);
+    newAvg = newCount > 0 ? Math.min(5, Math.max(0, newAvg)) : 0;
+
+    console.log(`New stats: avg_rating=${newAvg}, num_ratings=${newCount}`);
 
     // 6. Update book record
     const updateRes = await client.query(
@@ -348,7 +373,7 @@ app.post('/rate-book', async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error in /rate-book:', error);
-    return res.status(500).json({ error: 'Failed to rate book' });
+    return res.status(500).json({ error: 'Failed to rate book', details: error.message });
   } finally {
     client.release();
   }

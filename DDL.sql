@@ -35,12 +35,12 @@ CREATE TABLE books (
     publishedyear VARCHAR(4) CHECK (publishedyear ~ '^[0-9]{4}$' OR publishedyear = 'Unknown'),
     pagecount INTEGER,
     publisher VARCHAR(255),
-    rating DECIMAL(3,2) CHECK (rating >= 0 AND rating <= 5),
     previewlink TEXT,
     num_ratings INTEGER DEFAULT 0,
     num_reviews INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    avg_rating DECIMAL(3,2) DEFAULT 0 CHECK (avg_rating >= 0 AND avg_rating <= 5)
 );
 
 -- Genres table

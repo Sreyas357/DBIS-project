@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../css/star-rating.css';
 
-
-
-// In your StarRating.jsx
 const StarRating = ({ rating, interactive = false, onRate }) => {
   const [hoverRating, setHoverRating] = useState(0);
   const [currentRating, setCurrentRating] = useState(rating);
@@ -14,20 +11,15 @@ const StarRating = ({ rating, interactive = false, onRate }) => {
 
   const handleClick = (starValue) => {
       if (interactive && onRate) {
-          // if(currentRating === starValue) {
-          //     setCurrentRating(0); // Reset rating if the same star is clicked
-          //     onRate(0); // Trigger API call with 0 rating
-          // }else {
-          //     setCurrentRating(starValue); // Immediate local update
-          //     onRate(starValue); // Trigger API call
-          // }
-          if (currentRating === starValue) {
-            setCurrentRating(0); // Reset rating if the same star is clicked
-          }else {
-            setCurrentRating(starValue); // Immediate local update
+          if(currentRating === starValue) {
+              // If clicking the same star, reset the rating
+              setCurrentRating(0);
+              onRate(0);
+          } else {
+              // New rating or changing rating
+              setCurrentRating(starValue);
+              onRate(starValue);
           }
-          // setCurrentRating(starValue); // Immediate local update
-          onRate(starValue); // Trigger API call
       }
   };
 
