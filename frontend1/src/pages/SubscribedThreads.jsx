@@ -5,35 +5,42 @@ import ThreadList from '../components/ThreadList';
 import ThreadCategoriesList from '../components/ThreadCategoriesList';
 import '../css/threads.css';
 
-const Threads = () => {
+const SubscribedThreads = () => {
   const [threads, setThreads] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const [filter, setFilter] = useState('trending'); // trending, newest, top
   const navigate = useNavigate();
   
   useEffect(() => {
-    const fetchThreadsData = async () => {
+    const fetchSubscribedThreads = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:4000/api/threads/${filter}`);
+        const response = await fetch('http://localhost:4000/api/user/subscribed-threads', {
+          credentials: 'include'
+        });
+        
+        if (response.status === 401) {
+          // User not logged in, redirect to login
+          navigate('/login', { state: { from: '/threads/subscribed' } });
+          return;
+        }
         
         if (response.ok) {
           const data = await response.json();
           setThreads(data);
         } else {
-          console.error('Failed to fetch threads');
+          console.error('Failed to fetch subscribed threads');
         }
       } catch (error) {
-        console.error('Error fetching threads:', error);
+        console.error('Error fetching subscribed threads:', error);
       } finally {
         setLoading(false);
       }
     };
     
-    fetchThreadsData();
-  }, [filter]);
+    fetchSubscribedThreads();
+  }, [navigate]);
   
   useEffect(() => {
     const fetchCategories = async () => {
@@ -65,31 +72,14 @@ const Threads = () => {
           <ThreadCategoriesList 
             categories={categories} 
             loading={categoriesLoading} 
-            selectedCategoryId="all"
+            selectedCategoryId="subscribed"
           />
         </div>
         <div className="threads-main">
+          <div className="thread-category-header">
+            <h2>My Subscribed Threads</h2>
+          </div>
           <div className="thread-actions-bar">
-            <div className="threads-filters">
-              <button 
-                className={`threads-filter-button ${filter === 'trending' ? 'active' : ''}`}
-                onClick={() => setFilter('trending')}
-              >
-                Trending
-              </button>
-              <button 
-                className={`threads-filter-button ${filter === 'newest' ? 'active' : ''}`}
-                onClick={() => setFilter('newest')}
-              >
-                Newest
-              </button>
-              <button 
-                className={`threads-filter-button ${filter === 'top' ? 'active' : ''}`}
-                onClick={() => setFilter('top')}
-              >
-                Top
-              </button>
-            </div>
             <button 
               className="create-thread-button"
               onClick={() => navigate('/threads/create')}
@@ -97,11 +87,24 @@ const Threads = () => {
               Create Thread
             </button>
           </div>
-          <ThreadList threads={threads} loading={loading} />
+          {threads.length === 0 && !loading ? (
+            <div className="no-subscriptions">
+              <p>You haven't subscribed to any threads yet.</p>
+              <p>Subscribe to threads to keep track of discussions you're interested in.</p>
+              <button 
+                onClick={() => navigate('/threads')}
+                className="browse-threads-btn"
+              >
+                Browse Threads
+              </button>
+            </div>
+          ) : (
+            <ThreadList threads={threads} loading={loading} />
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-export default Threads;
+export default SubscribedThreads;

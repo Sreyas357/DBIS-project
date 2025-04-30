@@ -10,6 +10,7 @@ const Messages = () => {
     const [newMessage, setNewMessage] = useState('');
     const [newConversationUser, setNewConversationUser] = useState('');
     const [error, setError] = useState(null);
+    const [isSending, setIsSending] = useState(false);
 
     // Fetch list of users you've messaged
     useEffect(() => {
@@ -51,6 +52,7 @@ const Messages = () => {
         if (!newMessage.trim()) return;
 
         try {
+            setIsSending(true);
             const response = await fetch(`${apiUrl}/messages/send`, {
                 method: 'POST',
                 headers: {
@@ -64,8 +66,7 @@ const Messages = () => {
             });
 
             if (response.ok) {
-                const newMsg = await response.json();
-                setMessages(prev => [...prev, newMsg]); // Add new message to the conversation
+                await response.json();
                 setNewMessage('');
 
                 // If the selected user wasn't already in conversations, add them
@@ -75,6 +76,8 @@ const Messages = () => {
             }
         } catch (err) {
             console.error('Failed to send message', err);
+        } finally {
+            setIsSending(false);
         }
     };
 

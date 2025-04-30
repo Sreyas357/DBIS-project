@@ -7,9 +7,6 @@ const { Pool } = require("pg");
 const app = express();
 const port = 4000;
 
-
-
-
 // PostgreSQL connection
 // NOTE: use YOUR postgres username and password here
 const pool = new Pool({
@@ -44,28 +41,26 @@ app.use(
   })
 );
 
-/////////////////////////////////////////////////////////////
-// Authentication APIs
-// Signup, Login, IsLoggedIn and Logout
-
-// TODO: Implement authentication middleware
-// Redirect unauthenticated users to the login page with respective status code
+// Authentication middleware
 function isAuthenticated(req, res, next) {
   if (req.session && req.session.userId) {
     // If a session exists, continue to the next route handler
     return next();
   } else {
-    // If no session, respond with a 400 Unauthorized error
-    return res.status(400).json({ message: "Unauthorized" });
+    // If no session, respond with a 401 Unauthorized error
+    return res.status(401).json({ message: "Unauthorized" });
   }
 }
 
+// Root endpoint
 app.get("/", (req, res) => {
   res.send("Welcome to the backend API!");
 });
 
-/////////////////////////////////////////////////////////////
-// signup
+// Authentication APIs
+// Signup, Login, IsLoggedIn and Logout
+
+// Signup
 app.post('/signup', async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -116,7 +111,7 @@ app.post('/signup', async (req, res) => {
   }
 });
 
-/////////////////////////////////////////////////////////////
+// Login
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -157,9 +152,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-/////////////////////////////////////////////////////////////
-// TODO: Implement API used to check if the client is currently logged in or not.
-// use correct status codes and messages mentioned in the lab document
+// IsLoggedIn check
 app.get("/isLoggedIn", (req, res) => {
   if (req.session && req.session.userId) {
     console.log("User is logged in with session:", {
@@ -176,10 +169,7 @@ app.get("/isLoggedIn", (req, res) => {
   return res.status(400).json({ message: "User is not logged in" });
 });
 
-/////////////////////////////////////////////////////////////
-// TODO: Implement API used to logout the user
-// use correct status codes and messages mentioned in the lab document
-// Logout API route
+// Logout
 app.get("/logout", (req, res) => {
   // Destroy the session
   req.session.destroy((err) => {
@@ -193,8 +183,8 @@ app.get("/logout", (req, res) => {
   });
 });
 
-/////////////////////////////////////////////////////////////
-// ✅ Fetch all books, genres, and book_genres
+// Book APIs
+// Fetch all books, genres, and book_genres
 app.get("/books-data", async (req, res) => {
   try {
     const booksQuery = "SELECT * FROM books";
@@ -218,7 +208,7 @@ app.get("/books-data", async (req, res) => {
   }
 });
 
-/////////////////////////////////////////////////////////////
+// Get single book
 app.get('/books/:id', async (req, res) => {
   try {
     // Get book details
@@ -245,8 +235,6 @@ app.get('/books/:id', async (req, res) => {
   }
 });
 
-/////////////////////////////////////////////////////////////
-// GET /user/reviews - Get all reviews by the current user
 // Get current user's reviews
 app.get('/user/reviews', async (req, res) => {
   try {
@@ -270,7 +258,7 @@ app.get('/user/reviews', async (req, res) => {
   }
 });
 
-/////////////////////////////////////////////////////////////
+// Rate a book
 app.post('/rate-book', async (req, res) => {
   const client = await db.connect();
 
@@ -366,8 +354,7 @@ app.post('/rate-book', async (req, res) => {
   }
 });
 
-
-/////////////////////////////////////////////////////////////
+// Get user profile
 app.get('/user/profile', async (req, res) => {
   try {
       if (!req.session.userId) {
@@ -400,7 +387,7 @@ app.get('/user/profile', async (req, res) => {
   }
 });
 
-/////////////////////////////////////////////////////////////
+// Search users
 app.get('/user/search', async (req, res) => {
   const { username } = req.query;
 
@@ -432,7 +419,7 @@ app.get('/user/search', async (req, res) => {
   }
 });
 
-/////////////////////////////////////////////////////////////
+// Get user profile by username
 app.get('/user/:username', async (req, res) => {
   const { username } = req.params;
   const currentUserId = req.session.userId;
@@ -492,9 +479,7 @@ app.get('/user/:username', async (req, res) => {
   }
 });
 
-/////////////////////////////////////////////////////////////
-// === FOLLOW USER ===
-// === TOGGLE FOLLOW ===
+// Follow/unfollow user
 app.post('/user/follow/:username', async (req, res) => {
   const followerId = req.session.userId;
   const { username } = req.params;
@@ -545,8 +530,8 @@ app.post('/user/follow/:username', async (req, res) => {
   }
 });
 
-/////////////////////////////////////////////////////////////
-// GET /messages/conversations
+// Message APIs
+// Get conversations
 app.get('/messages/conversations', async (req, res) => {
   try {
       const currentUserId = req.session.userId;
@@ -570,11 +555,7 @@ app.get('/messages/conversations', async (req, res) => {
   }
 });
 
-/////////////////////////////////////////////////////////////
-// GET /messages/:userId
-
-//uncomment to handle pagination. (should also handle in messages.jsx)
-
+// Get messages with a user
 app.get('/messages/:userId', async (req, res) => {
   const currentUserId = req.session.userId;
   const otherUserId = parseInt(req.params.userId);
@@ -612,8 +593,7 @@ app.get('/messages/:userId', async (req, res) => {
   }
 });
 
-/////////////////////////////////////////////////////////////
-// POST /messages/:userId
+// Send a message
 app.post('/messages/send', async (req, res) => {
   const senderId = req.session.userId;
   const { recipient_id, message } = req.body;
@@ -646,8 +626,7 @@ app.post('/messages/send', async (req, res) => {
   }
 });
 
-/////////////////////////////////////////////////////////////
-// GET /user/:username
+// Get user by username for messages
 app.get('/user/messages/:username', async (req, res) => {
   const { username } = req.params;
 
@@ -668,43 +647,43 @@ app.get('/user/messages/:username', async (req, res) => {
   }
 });
 
-////////////////////////////////////////////////////
-// Thread System APIs
-
-// Add thread categories if none exist
-const ensureThreadCategories = async () => {
+// Add Book Search API for thread creation
+app.get('/books-search', async (req, res) => {
   try {
-    const result = await pool.query('SELECT COUNT(*) FROM thread_categories');
-    const count = parseInt(result.rows[0].count);
-    
-    if (count === 0) {
-      console.log('No thread categories found, creating default categories...');
-      await pool.query(`
-        INSERT INTO thread_categories (name, description) VALUES
-        ('Book Discussions', 'General discussions about books'),
-        ('Author Discussions', 'Discussions about authors and their works'),
-        ('Reading Lists', 'Share and discuss reading lists'),
-        ('Book Recommendations', 'Ask for and provide book recommendations'),
-        ('Book Reviews', 'Share your book reviews and ratings')
-      `);
-      console.log('Default thread categories created');
-    } else {
-      console.log(`Found ${count} existing thread categories`);
+    const { q } = req.query;
+    if (!q || q.trim().length < 2) {
+      return res.json([]);
     }
+
+    const query = `
+      SELECT id, title, author, coverurl
+      FROM books
+      WHERE 
+        title ILIKE $1 OR 
+        author ILIKE $1
+      ORDER BY 
+        CASE WHEN title ILIKE $2 THEN 0
+             WHEN author ILIKE $2 THEN 1
+             ELSE 2
+        END,
+        title
+      LIMIT 10
+    `;
+    
+    const result = await pool.query(query, [`%${q}%`, `${q}%`]);
+    res.json(result.rows);
   } catch (err) {
-    console.error('Error checking/creating thread categories:', err);
+    console.error('Error searching books:', err);
+    res.status(500).json({ error: 'Failed to search books' });
   }
-};
+});
 
-// Call this when the app starts
-ensureThreadCategories();
+// ==== THREAD SYSTEM APIs ====
 
-// Get all thread categories
-app.get('/api/threads/categories', async (req, res) => {
+// Get thread categories
+app.get('/api/thread-categories', async (req, res) => {
   try {
-    console.log('Fetching thread categories...');
     const result = await pool.query('SELECT * FROM thread_categories ORDER BY name');
-    console.log('Thread categories fetched:', result.rows);
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching thread categories:', err);
@@ -712,81 +691,288 @@ app.get('/api/threads/categories', async (req, res) => {
   }
 });
 
-// Get all threads with optional filtering
-app.get('/api/threads', async (req, res) => {
+// Get trending threads
+app.get('/api/threads/trending', async (req, res) => {
   try {
-    const { category_id, book_id, parent_thread_id, user_id } = req.query;
-    let query = `
-      SELECT t.*, u.username, tc.name as category_name, b.title as book_title,
-             (SELECT COUNT(*) FROM thread_comments WHERE thread_id = t.thread_id) as comment_count
+    const { limit = 10, offset = 0 } = req.query;
+    
+    const query = `
+      SELECT t.*, 
+             u.username, 
+             tc.name as category_name,
+             tc.color as category_color,
+             b.title as book_title,
+             COALESCE(COUNT(DISTINCT c.comment_id), 0) as comment_count
       FROM threads t
       JOIN users u ON t.user_id = u.user_id
       LEFT JOIN thread_categories tc ON t.category_id = tc.category_id
       LEFT JOIN books b ON t.book_id = b.id
-      WHERE 1=1
+      LEFT JOIN thread_comments c ON t.thread_id = c.thread_id
+      GROUP BY t.thread_id, u.username, tc.name, tc.color, b.title
+      ORDER BY 
+        CASE WHEN t.is_pinned THEN 1 ELSE 0 END DESC,
+        (t.upvotes - t.downvotes) * 0.7 + t.view_count * 0.3 DESC,
+        t.created_at DESC
+      LIMIT $1 OFFSET $2
     `;
-    const params = [];
-    let paramIndex = 1;
-
-    if (category_id) {
-      query += ` AND t.category_id = $${paramIndex}`;
-      params.push(category_id);
-      paramIndex++;
-    }
-
-    if (book_id) {
-      query += ` AND t.book_id = $${paramIndex}`;
-      params.push(book_id);
-      paramIndex++;
-    }
-
-    if (parent_thread_id === 'null') {
-      query += ` AND t.parent_thread_id IS NULL`;
-    } else if (parent_thread_id) {
-      query += ` AND t.parent_thread_id = $${paramIndex}`;
-      params.push(parent_thread_id);
-      paramIndex++;
-    }
-
-    if (user_id) {
-      query += ` AND t.user_id = $${paramIndex}`;
-      params.push(user_id);
-      paramIndex++;
-    }
-
-    query += ` ORDER BY t.is_pinned DESC, t.created_at DESC`;
-
-    const result = await pool.query(query, params);
+    
+    const result = await pool.query(query, [limit, offset]);
     res.json(result.rows);
   } catch (err) {
-    console.error('Error fetching threads:', err);
-    res.status(500).json({ error: 'Failed to fetch threads' });
+    console.error('Error fetching trending threads:', err);
+    res.status(500).json({ error: 'Failed to fetch trending threads' });
   }
 });
 
-// Get a single thread by ID
-app.get('/api/threads/:threadId', async (req, res) => {
+// Get newest threads
+app.get('/api/threads/newest', async (req, res) => {
   try {
-    const { threadId } = req.params;
+    const { limit = 10, offset = 0 } = req.query;
     
-    // Increment view count
-    await pool.query('UPDATE threads SET view_count = view_count + 1 WHERE thread_id = $1', [threadId]);
-    
-    // Get thread details
-    const threadResult = await pool.query(`
-      SELECT t.*, u.username, tc.name as category_name, b.title as book_title
+    const query = `
+      SELECT t.*, 
+             u.username, 
+             tc.name as category_name,
+             tc.color as category_color,
+             b.title as book_title,
+             COALESCE(COUNT(DISTINCT c.comment_id), 0) as comment_count
       FROM threads t
       JOIN users u ON t.user_id = u.user_id
       LEFT JOIN thread_categories tc ON t.category_id = tc.category_id
       LEFT JOIN books b ON t.book_id = b.id
-      WHERE t.thread_id = $1
-    `, [threadId]);
+      LEFT JOIN thread_comments c ON t.thread_id = c.thread_id
+      GROUP BY t.thread_id, u.username, tc.name, tc.color, b.title
+      ORDER BY 
+        CASE WHEN t.is_pinned THEN 1 ELSE 0 END DESC,
+        t.created_at DESC
+      LIMIT $1 OFFSET $2
+    `;
     
-    if (threadResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Thread not found' });
+    const result = await pool.query(query, [limit, offset]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching newest threads:', err);
+    res.status(500).json({ error: 'Failed to fetch newest threads' });
+  }
+});
+
+// Get top threads
+app.get('/api/threads/top', async (req, res) => {
+  try {
+    const { limit = 10, offset = 0 } = req.query;
+    
+    const query = `
+      SELECT t.*, 
+             u.username, 
+             tc.name as category_name,
+             tc.color as category_color,
+             b.title as book_title,
+             COALESCE(COUNT(DISTINCT c.comment_id), 0) as comment_count
+      FROM threads t
+      JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN thread_categories tc ON t.category_id = tc.category_id
+      LEFT JOIN books b ON t.book_id = b.id
+      LEFT JOIN thread_comments c ON t.thread_id = c.thread_id
+      GROUP BY t.thread_id, u.username, tc.name, tc.color, b.title
+      ORDER BY 
+        CASE WHEN t.is_pinned THEN 1 ELSE 0 END DESC,
+        (t.upvotes - t.downvotes) DESC,
+        t.created_at DESC
+      LIMIT $1 OFFSET $2
+    `;
+    
+    const result = await pool.query(query, [limit, offset]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching top threads:', err);
+    res.status(500).json({ error: 'Failed to fetch top threads' });
+  }
+});
+
+// Get threads by category
+app.get('/api/threads/category/:categoryId', async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+    const { limit = 10, offset = 0 } = req.query;
+    
+    const query = `
+      SELECT t.*, 
+             u.username, 
+             tc.name as category_name,
+             tc.color as category_color,
+             b.title as book_title,
+             COALESCE(COUNT(DISTINCT c.comment_id), 0) as comment_count
+      FROM threads t
+      JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN thread_categories tc ON t.category_id = tc.category_id
+      LEFT JOIN books b ON t.book_id = b.id
+      LEFT JOIN thread_comments c ON t.thread_id = c.thread_id
+      WHERE t.category_id = $1
+      GROUP BY t.thread_id, u.username, tc.name, tc.color, b.title
+      ORDER BY 
+        CASE WHEN t.is_pinned THEN 1 ELSE 0 END DESC,
+        t.created_at DESC
+      LIMIT $2 OFFSET $3
+    `;
+    
+    const result = await pool.query(query, [categoryId, limit, offset]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching category threads:', err);
+    res.status(500).json({ error: 'Failed to fetch category threads' });
+  }
+});
+
+// Get threads related to a specific book
+app.get('/api/threads/book/:bookId', async (req, res) => {
+  try {
+    const { bookId } = req.params;
+    
+    const query = `
+      SELECT t.*, 
+             u.username, 
+             tc.name as category_name,
+             tc.color as category_color,
+             COALESCE(COUNT(DISTINCT c.comment_id), 0) as comment_count
+      FROM threads t
+      JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN thread_categories tc ON t.category_id = tc.category_id
+      LEFT JOIN thread_comments c ON t.thread_id = c.thread_id
+      WHERE t.book_id = $1
+      GROUP BY t.thread_id, u.username, tc.name, tc.color
+      ORDER BY t.created_at DESC
+    `;
+    
+    const result = await pool.query(query, [bookId]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching book threads:', err);
+    res.status(500).json({ error: 'Failed to fetch book threads' });
+  }
+});
+
+// Get thread by ID with comments - Update to better process nested replies
+app.get('/api/threads/:threadId', async (req, res) => {
+  try {
+    const { threadId } = req.params;
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      // Increment view count
+      await client.query('UPDATE threads SET view_count = view_count + 1 WHERE thread_id = $1', [threadId]);
+      
+      // Get thread details - keep the existing code
+      const threadQuery = `
+        SELECT t.*, 
+               u.username, 
+               tc.name as category_name,
+               tc.color as category_color,
+               b.title as book_title,
+               b.author as book_author,
+               b.coverurl as book_coverurl,
+               b.id as book_id
+        FROM threads t
+        JOIN users u ON t.user_id = u.user_id
+        LEFT JOIN thread_categories tc ON t.category_id = tc.category_id
+        LEFT JOIN books b ON t.book_id = b.id
+        WHERE t.thread_id = $1
+      `;
+      
+      const threadResult = await client.query(threadQuery, [threadId]);
+      
+      if (threadResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Thread not found' });
+      }
+      
+      // Get comments for the thread - keep the existing code
+      const commentsQuery = `
+        SELECT c.*, 
+               u.username,
+               (SELECT COUNT(*) FROM thread_replies WHERE comment_id = c.comment_id) as reply_count,
+               COALESCE(
+                 (SELECT vote_type FROM thread_votes 
+                  WHERE user_id = $2 AND comment_id = c.comment_id),
+                 0
+               ) as user_vote
+        FROM thread_comments c
+        JOIN users u ON c.user_id = u.user_id
+        WHERE c.thread_id = $1
+        ORDER BY c.created_at ASC
+      `;
+      
+      const commentsResult = await client.query(commentsQuery, [threadId, req.session?.userId || 0]);
+      
+      // Get all replies for this thread's comments - improved to get parent-child relationship
+      const repliesQuery = `
+        SELECT r.*, 
+               u.username,
+               c.thread_id, -- include thread_id for easier reference
+               COALESCE(
+                 (SELECT vote_type FROM thread_votes 
+                  WHERE user_id = $2 AND reply_id = r.reply_id),
+                 0
+               ) as user_vote
+        FROM thread_replies r
+        JOIN users u ON r.user_id = u.user_id
+        JOIN thread_comments c ON r.comment_id = c.comment_id
+        WHERE c.thread_id = $1
+        ORDER BY r.created_at ASC
+      `;
+      
+      const repliesResult = await client.query(repliesQuery, [threadId, req.session?.userId || 0]);
+      
+      // Log the replies for debugging
+      console.log(`Found ${repliesResult.rows.length} replies for thread ${threadId}`);
+      
+      // Combined result for comments and replies
+      const combinedComments = [...commentsResult.rows, ...repliesResult.rows];
+      
+      // Check if user has subscribed to this thread
+      let isSubscribed = false;
+      
+      if (req.session && req.session.userId) {
+        const subscriptionQuery = `
+          SELECT 1 FROM thread_subscriptions 
+          WHERE user_id = $1 AND thread_id = $2
+        `;
+        
+        const subscriptionResult = await client.query(subscriptionQuery, [req.session.userId, threadId]);
+        isSubscribed = subscriptionResult.rows.length > 0;
+      }
+      
+      // Check if user has voted on this thread
+      let userVote = 0;
+      
+      if (req.session && req.session.userId) {
+        const voteQuery = `
+          SELECT vote_type FROM thread_votes 
+          WHERE user_id = $1 AND thread_id = $2
+        `;
+        
+        const voteResult = await client.query(voteQuery, [req.session.userId, threadId]);
+        if (voteResult.rows.length > 0) {
+          userVote = voteResult.rows[0].vote_type;
+        }
+      }
+      
+      await client.query('COMMIT');
+      
+      // Return the complete data
+      res.json({
+        thread: threadResult.rows[0],
+        comments: combinedComments,
+        isSubscribed,
+        userVote
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
     }
-    
-    res.json(threadResult.rows[0]);
   } catch (err) {
     console.error('Error fetching thread:', err);
     res.status(500).json({ error: 'Failed to fetch thread' });
@@ -796,224 +982,31 @@ app.get('/api/threads/:threadId', async (req, res) => {
 // Create a new thread
 app.post('/api/threads', isAuthenticated, async (req, res) => {
   try {
-    console.log("Thread creation request received:", req.body);
-    const { title, content, category_id, book_id, parent_thread_id, custom_book, custom_author } = req.body;
+    const { title, content, categoryId, bookId } = req.body;
     const userId = req.session.userId;
     
     if (!title || !content) {
       return res.status(400).json({ error: 'Title and content are required' });
     }
     
-    if (!userId) {
-      return res.status(401).json({ error: 'You must be logged in to create a thread' });
-    }
+    const query = `
+      INSERT INTO threads (title, content, user_id, category_id, book_id, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      RETURNING *
+    `;
     
-    // Start a transaction for creating custom book if needed
-    const client = await pool.connect();
+    const result = await pool.query(query, [title, content, userId, categoryId || null, bookId || null]);
     
-    try {
-      await client.query('BEGIN');
-      
-      let finalBookId = book_id;
-      
-      // Handle custom book if provided
-      if (custom_book && custom_book.trim() !== '') {
-        console.log("Processing custom book:", custom_book);
-        
-        // Check if a similar book already exists
-        const bookCheckResult = await client.query(
-          'SELECT id FROM books WHERE LOWER(title) = LOWER($1) AND LOWER(author) = LOWER($2)',
-          [custom_book.trim(), custom_author ? custom_author.trim() : 'Unknown']
-        );
-        
-        if (bookCheckResult.rows.length > 0) {
-          // Use existing book
-          console.log("Found existing book with same title/author");
-          finalBookId = bookCheckResult.rows[0].id;
-        } else {
-          // Check what columns exist in the books table
-          const tableInfoResult = await client.query(`
-            SELECT column_name, data_type 
-            FROM information_schema.columns 
-            WHERE table_name = 'books'
-          `);
-          console.log("Books table columns:", tableInfoResult.rows);
-          
-          // Create new book with appropriate fields
-          const hasDescriptionField = tableInfoResult.rows.some(col => col.column_name === 'description');
-          const hasImageField = tableInfoResult.rows.some(col => col.column_name === 'image_url');
-          const hasPublishedField = tableInfoResult.rows.some(col => col.column_name === 'published');
-          
-          // Build the dynamic SQL based on available columns
-          let insertColumns = 'title, author';
-          let insertValues = '$1, $2';
-          const insertParams = [custom_book.trim(), custom_author ? custom_author.trim() : 'Unknown'];
-          let valueIndex = 3;
-          
-          if (hasDescriptionField) {
-            insertColumns += ', description';
-            insertValues += `, $${valueIndex++}`;
-            insertParams.push('No description available');
-          }
-          
-          if (hasImageField) {
-            insertColumns += ', image_url';
-            insertValues += `, $${valueIndex++}`;
-            insertParams.push('');
-          }
-          
-          if (hasPublishedField) {
-            insertColumns += ', published';
-            insertValues += `, $${valueIndex++}`;
-            insertParams.push(new Date().getFullYear());
-          }
-          
-          // Add timestamps
-          const hasCreatedAt = tableInfoResult.rows.some(col => col.column_name === 'created_at');
-          const hasUpdatedAt = tableInfoResult.rows.some(col => col.column_name === 'updated_at');
-          
-          if (hasCreatedAt) {
-            insertColumns += ', created_at';
-            insertValues += ', NOW()';
-          }
-          
-          if (hasUpdatedAt) {
-            insertColumns += ', updated_at';
-            insertValues += ', NOW()';
-          }
-          
-          const insertQuery = `
-            INSERT INTO books (${insertColumns}) 
-            VALUES (${insertValues}) 
-            RETURNING id
-          `;
-          
-          console.log("Creating new book with query:", insertQuery);
-          console.log("Query parameters:", insertParams);
-          
-          const newBookResult = await client.query(insertQuery, insertParams);
-          
-          finalBookId = newBookResult.rows[0].id;
-          console.log("Created new book with ID:", finalBookId);
-        }
-      }
-      
-      // Verify parent thread exists if specified
-      if (parent_thread_id) {
-        const parentThreadCheck = await client.query(
-          'SELECT thread_id FROM threads WHERE thread_id = $1',
-          [parent_thread_id]
-        );
-        
-        if (parentThreadCheck.rows.length === 0) {
-          await client.query('ROLLBACK');
-          return res.status(400).json({ error: 'Parent thread does not exist' });
-        }
-      }
-      
-      // Create the thread
-      console.log("Creating thread with book_id:", finalBookId);
-      const result = await client.query(`
-        INSERT INTO threads (title, content, user_id, category_id, book_id, parent_thread_id)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING *
-      `, [title, content, userId, category_id || null, finalBookId || null, parent_thread_id || null]);
-      
-      await client.query('COMMIT');
-      
-      // Return the created thread
-      console.log("Thread created successfully:", result.rows[0]);
-      res.status(201).json(result.rows[0]);
-    } catch (err) {
-      await client.query('ROLLBACK');
-      console.error("Database error in thread creation:", err);
-      console.error("Error details:", err.stack);
-      throw err;
-    } finally {
-      client.release();
-    }
+    // Auto-subscribe the user to their own thread
+    await pool.query(
+      'INSERT INTO thread_subscriptions (user_id, thread_id) VALUES ($1, $2)',
+      [userId, result.rows[0].thread_id]
+    );
+    
+    res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error creating thread:', err);
-    res.status(500).json({ error: 'Failed to create thread: ' + err.message });
-  }
-});
-
-// Update a thread
-app.put('/api/threads/:threadId', isAuthenticated, async (req, res) => {
-  try {
-    const { threadId } = req.params;
-    const { title, content, category_id, book_id, is_pinned, is_locked } = req.body;
-    const userId = req.session.userId;
-    
-    // Check if user is the author of the thread
-    const threadResult = await pool.query('SELECT user_id FROM threads WHERE thread_id = $1', [threadId]);
-    
-    if (threadResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Thread not found' });
-    }
-    
-    if (threadResult.rows[0].user_id !== userId) {
-      return res.status(403).json({ error: 'You are not authorized to update this thread' });
-    }
-    
-    const result = await pool.query(`
-      UPDATE threads
-      SET title = $1, content = $2, category_id = $3, book_id = $4, updated_at = NOW()
-      WHERE thread_id = $5 AND user_id = $6
-      RETURNING *
-    `, [title, content, category_id || null, book_id || null, threadId, userId]);
-    
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('Error updating thread:', err);
-    res.status(500).json({ error: 'Failed to update thread' });
-  }
-});
-
-// Delete a thread
-app.delete('/api/threads/:threadId', isAuthenticated, async (req, res) => {
-  try {
-    const { threadId } = req.params;
-    const userId = req.session.userId;
-    
-    // Check if user is the author of the thread
-    const threadResult = await pool.query('SELECT user_id FROM threads WHERE thread_id = $1', [threadId]);
-    
-    if (threadResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Thread not found' });
-    }
-    
-    if (threadResult.rows[0].user_id !== userId) {
-      return res.status(403).json({ error: 'You are not authorized to delete this thread' });
-    }
-    
-    await pool.query('DELETE FROM threads WHERE thread_id = $1', [threadId]);
-    
-    res.json({ message: 'Thread deleted successfully' });
-  } catch (err) {
-    console.error('Error deleting thread:', err);
-    res.status(500).json({ error: 'Failed to delete thread' });
-  }
-});
-
-// Get comments for a thread
-app.get('/api/threads/:threadId/comments', async (req, res) => {
-  try {
-    const { threadId } = req.params;
-    
-    const result = await pool.query(`
-      SELECT tc.*, u.username,
-      CASE WHEN tc.parent_id IS NULL THEN 'comment' ELSE 'reply' END as comment_type
-      FROM thread_comments tc
-      JOIN users u ON tc.user_id = u.user_id
-      WHERE tc.thread_id = $1
-      ORDER BY tc.created_at ASC
-    `, [threadId]);
-    
-    res.json(result.rows);
-  } catch (err) {
-    console.error('Error fetching comments:', err);
-    res.status(500).json({ error: 'Failed to fetch comments' });
+    res.status(500).json({ error: 'Failed to create thread' });
   }
 });
 
@@ -1021,88 +1014,52 @@ app.get('/api/threads/:threadId/comments', async (req, res) => {
 app.post('/api/threads/:threadId/comments', isAuthenticated, async (req, res) => {
   try {
     const { threadId } = req.params;
-    const { content, parentId } = req.body;
-    const userId = req.session.userId;
-    
-    if (!content) {
-      return res.status(400).json({ error: 'Content is required' });
-    }
-    
-    const result = await pool.query(`
-      INSERT INTO thread_comments (thread_id, user_id, content, parent_id)
-      VALUES ($1, $2, $3, $4)
-      RETURNING *
-    `, [threadId, userId, content, parentId || null]);
-    
-    // Get the username to return with the new comment
-    const userResult = await pool.query('SELECT username FROM users WHERE user_id = $1', [userId]);
-    const comment = {
-      ...result.rows[0],
-      username: userResult.rows[0].username
-    };
-    
-    res.status(201).json(comment);
-  } catch (err) {
-    console.error('Error adding comment:', err);
-    res.status(500).json({ error: 'Failed to add comment' });
-  }
-});
-
-// Update a comment
-app.put('/api/comments/:commentId', isAuthenticated, async (req, res) => {
-  try {
-    const { commentId } = req.params;
     const { content } = req.body;
     const userId = req.session.userId;
     
-    // Check if user is the author of the comment
-    const commentResult = await pool.query('SELECT user_id FROM thread_comments WHERE comment_id = $1', [commentId]);
-    
-    if (commentResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Comment not found' });
+    if (!content) {
+      return res.status(400).json({ error: 'Comment content is required' });
     }
     
-    if (commentResult.rows[0].user_id !== userId) {
-      return res.status(403).json({ error: 'You are not authorized to update this comment' });
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      // Add the comment
+      const commentQuery = `
+        INSERT INTO thread_comments (thread_id, user_id, content, created_at, updated_at)
+        VALUES ($1, $2, $3, NOW(), NOW())
+        RETURNING *
+      `;
+      
+      const commentResult = await client.query(commentQuery, [threadId, userId, content]);
+      
+      // Update comment count on the thread
+      await client.query(
+        'UPDATE threads SET comment_count = comment_count + 1 WHERE thread_id = $1',
+        [threadId]
+      );
+      
+      // Get username to return with comment
+      const userQuery = 'SELECT username FROM users WHERE user_id = $1';
+      const userResult = await client.query(userQuery, [userId]);
+      
+      await client.query('COMMIT');
+      
+      res.status(201).json({
+        ...commentResult.rows[0],
+        username: userResult.rows[0].username
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
     }
-    
-    const result = await pool.query(`
-      UPDATE thread_comments
-      SET content = $1, updated_at = NOW()
-      WHERE comment_id = $2 AND user_id = $3
-      RETURNING *
-    `, [content, commentId, userId]);
-    
-    res.json(result.rows[0]);
   } catch (err) {
-    console.error('Error updating comment:', err);
-    res.status(500).json({ error: 'Failed to update comment' });
-  }
-});
-
-// Delete a comment
-app.delete('/api/comments/:commentId', isAuthenticated, async (req, res) => {
-  try {
-    const { commentId } = req.params;
-    const userId = req.session.userId;
-    
-    // Check if user is the author of the comment
-    const commentResult = await pool.query('SELECT user_id FROM thread_comments WHERE comment_id = $1', [commentId]);
-    
-    if (commentResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Comment not found' });
-    }
-    
-    if (commentResult.rows[0].user_id !== userId) {
-      return res.status(403).json({ error: 'You are not authorized to delete this comment' });
-    }
-    
-    await pool.query('DELETE FROM thread_comments WHERE comment_id = $1', [commentId]);
-    
-    res.json({ message: 'Comment deleted successfully' });
-  } catch (err) {
-    console.error('Error deleting comment:', err);
-    res.status(500).json({ error: 'Failed to delete comment' });
+    console.error('Error adding comment:', err);
+    res.status(500).json({ error: 'Failed to add comment' });
   }
 });
 
@@ -1111,14 +1068,16 @@ app.get('/api/comments/:commentId/replies', async (req, res) => {
   try {
     const { commentId } = req.params;
     
-    const result = await pool.query(`
-      SELECT tc.*, u.username
-      FROM thread_comments tc
-      JOIN users u ON tc.user_id = u.user_id
-      WHERE tc.parent_id = $1
-      ORDER BY tc.created_at ASC
-    `, [commentId]);
+    const query = `
+      SELECT r.*, u.username,
+             (SELECT COUNT(*) FROM thread_replies WHERE parent_reply_id = r.reply_id) as child_replies
+      FROM thread_replies r
+      JOIN users u ON r.user_id = u.user_id
+      WHERE r.comment_id = $1 AND r.parent_reply_id IS NULL
+      ORDER BY r.created_at ASC
+    `;
     
+    const result = await pool.query(query, [commentId]);
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching replies:', err);
@@ -1126,7 +1085,456 @@ app.get('/api/comments/:commentId/replies', async (req, res) => {
   }
 });
 
+// Add a reply to a comment
+app.post('/api/comments/:commentId/replies', isAuthenticated, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const { content, parentReplyId } = req.body;
+    const userId = req.session.userId;
+    
+    if (!content) {
+      return res.status(400).json({ error: 'Reply content is required' });
+    }
+    
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      // Add the reply
+      const query = `
+        INSERT INTO thread_replies (comment_id, user_id, parent_reply_id, content, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, NOW(), NOW())
+        RETURNING *
+      `;
+      
+      const result = await client.query(query, [
+        commentId, 
+        userId, 
+        parentReplyId || null, 
+        content
+      ]);
+      
+      // Update reply count on the comment
+      await client.query(
+        'UPDATE thread_comments SET reply_count = reply_count + 1 WHERE comment_id = $1',
+        [commentId]
+      );
+      
+      // Get username to return with reply
+      const userQuery = 'SELECT username FROM users WHERE user_id = $1';
+      const userResult = await client.query(userQuery, [userId]);
+      
+      await client.query('COMMIT');
+      
+      res.status(201).json({
+        ...result.rows[0],
+        username: userResult.rows[0].username
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Error adding reply:', err);
+    res.status(500).json({ error: 'Failed to add reply' });
+  }
+});
+
+// Add a reply to a comment or another reply
+app.post('/api/threads/:threadId/replies', isAuthenticated, async (req, res) => {
+  try {
+    const { threadId } = req.params;
+    const { content, comment_id, parent_reply_id } = req.body;
+    const userId = req.session.userId;
+    
+    if (!content || !comment_id) {
+      return res.status(400).json({ error: 'Reply content and comment_id are required' });
+    }
+    
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      // Debug logging
+      console.log('Adding reply with data:', {
+        comment_id,
+        user_id: userId,
+        parent_reply_id,
+        content
+      });
+      
+      // Add the reply
+      const query = `
+        INSERT INTO thread_replies (comment_id, user_id, parent_reply_id, content, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, NOW(), NOW())
+        RETURNING *
+      `;
+      
+      // Here parent_reply_id will be null for direct replies to comments,
+      // otherwise it's the ID of the parent reply
+      const result = await client.query(query, [
+        comment_id, 
+        userId, 
+        parent_reply_id, // Can be null or a valid reply_id
+        content
+      ]);
+      
+      // Update reply count on the comment
+      await client.query(
+        'UPDATE thread_comments SET reply_count = reply_count + 1 WHERE comment_id = $1',
+        [comment_id]
+      );
+      
+      // Get username to return with reply
+      const userQuery = 'SELECT username FROM users WHERE user_id = $1';
+      const userResult = await client.query(userQuery, [userId]);
+      
+      await client.query('COMMIT');
+      
+      // Return the newly created reply with user information
+      res.status(201).json({
+        ...result.rows[0],
+        username: userResult.rows[0].username
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Database error adding reply:', err);
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Error adding reply:', err);
+    res.status(500).json({ error: 'Failed to add reply', details: err.message });
+  }
+});
+
+// Vote on a thread, comment, or reply
+app.post('/api/vote', isAuthenticated, async (req, res) => {
+  try {
+    const { entityType, entityId, voteType } = req.body;
+    const userId = req.session.userId;
+    
+    if (!['thread', 'comment', 'reply'].includes(entityType) || !entityId || ![1, -1, 0].includes(voteType)) {
+      return res.status(400).json({ error: 'Invalid vote parameters' });
+    }
+    
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      // Check if user already voted
+      const checkQuery = `
+        SELECT vote_type FROM thread_votes 
+        WHERE user_id = $1 AND ${entityType}_id = $2
+      `;
+      
+      const checkResult = await client.query(checkQuery, [userId, entityId]);
+      const existingVote = checkResult.rows.length > 0 ? checkResult.rows[0].vote_type : 0;
+      
+      if (existingVote === voteType) {
+        // User is toggling their vote off
+        if (voteType !== 0) {
+          await client.query(
+            `DELETE FROM thread_votes WHERE user_id = $1 AND ${entityType}_id = $2`,
+            [userId, entityId]
+          );
+          
+          // Update vote counts on entity
+          if (voteType === 1) {
+            await client.query(
+              `UPDATE ${entityType}s SET upvotes = upvotes - 1 WHERE ${entityType}_id = $1`,
+              [entityId]
+            );
+          } else {
+            await client.query(
+              `UPDATE ${entityType}s SET downvotes = downvotes - 1 WHERE ${entityType}_id = $1`,
+              [entityId]
+            );
+          }
+        }
+      } else {
+        // Either new vote or changing vote
+        if (existingVote !== 0) {
+          // Remove existing vote
+          if (existingVote === 1) {
+            await client.query(
+              `UPDATE ${entityType}s SET upvotes = upvotes - 1 WHERE ${entityType}_id = $1`,
+              [entityId]
+            );
+          } else {
+            await client.query(
+              `UPDATE ${entityType}s SET downvotes = downvotes - 1 WHERE ${entityType}_id = $1`,
+              [entityId]
+            );
+          }
+          
+          await client.query(
+            `DELETE FROM thread_votes WHERE user_id = $1 AND ${entityType}_id = $2`,
+            [userId, entityId]
+          );
+        }
+        
+        if (voteType !== 0) {
+          // Add new vote
+          const insertQuery = `
+            INSERT INTO thread_votes (user_id, ${entityType}_id, vote_type, created_at)
+            VALUES ($1, $2, $3, NOW())
+          `;
+          
+          await client.query(insertQuery, [userId, entityId, voteType]);
+          
+          // Update vote counts on entity
+          if (voteType === 1) {
+            await client.query(
+              `UPDATE ${entityType}s SET upvotes = upvotes + 1 WHERE ${entityType}_id = $1`,
+              [entityId]
+            );
+          } else {
+            await client.query(
+              `UPDATE ${entityType}s SET downvotes = downvotes + 1 WHERE ${entityType}_id = $1`,
+              [entityId]
+            );
+          }
+        }
+      }
+      
+      // Get updated vote counts
+      const updatedCountsQuery = `
+        SELECT upvotes, downvotes FROM ${entityType}s WHERE ${entityType}_id = $1
+      `;
+      
+      const updatedCounts = await client.query(updatedCountsQuery, [entityId]);
+      
+      await client.query('COMMIT');
+      
+      res.json({
+        upvotes: updatedCounts.rows[0].upvotes,
+        downvotes: updatedCounts.rows[0].downvotes,
+        userVote: voteType === existingVote ? 0 : voteType
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Error processing vote:', err);
+    res.status(500).json({ error: 'Failed to process vote' });
+  }
+});
+
+// Fix the vote endpoint
+app.post('/api/:entityType/:entityId/vote', isAuthenticated, async (req, res) => {
+  try {
+    const { entityType, entityId } = req.params;
+    const { voteValue } = req.body;
+    const userId = req.session.userId;
+    
+    // Convert entityType to singular if it's plural
+    const singleEntityType = entityType.endsWith('s') ? 
+      entityType.substring(0, entityType.length - 1) : 
+      entityType;
+    
+    if (!['thread', 'comment', 'reply'].includes(singleEntityType) || 
+        !entityId || 
+        ![1, -1, 0].includes(voteValue)) {
+      return res.status(400).json({ 
+        error: 'Invalid vote parameters', 
+        details: { entityType: singleEntityType, entityId, voteValue } 
+      });
+    }
+    
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      // Check if user already voted
+      const checkQuery = `
+        SELECT vote_id, vote_type FROM thread_votes 
+        WHERE user_id = $1 AND ${singleEntityType}_id = $2
+      `;
+      
+      const checkResult = await client.query(checkQuery, [userId, entityId]);
+      const existingVote = checkResult.rows.length > 0 ? checkResult.rows[0].vote_type : 0;
+      
+      // Record vote changes for updating counts
+      let upvoteChange = 0;
+      let downvoteChange = 0;
+      
+      if (existingVote !== voteValue) {
+        // Remove effect of previous vote
+        if (existingVote === 1) upvoteChange--;
+        if (existingVote === -1) downvoteChange--;
+        
+        // Add effect of new vote
+        if (voteValue === 1) upvoteChange++;
+        if (voteValue === -1) downvoteChange++;
+        
+        // Update or delete vote record
+        if (checkResult.rows.length > 0) {
+          if (voteValue === 0) {
+            // Delete the vote if toggling off
+            await client.query(
+              'DELETE FROM thread_votes WHERE vote_id = $1',
+              [checkResult.rows[0].vote_id]
+            );
+          } else {
+            // Update the vote
+            await client.query(
+              'UPDATE thread_votes SET vote_type = $1, created_at = NOW() WHERE vote_id = $2',
+              [voteValue, checkResult.rows[0].vote_id]
+            );
+          }
+        } else if (voteValue !== 0) {
+          // Insert new vote
+          const voteInsert = `
+            INSERT INTO thread_votes (user_id, ${singleEntityType}_id, vote_type, created_at)
+            VALUES ($1, $2, $3, NOW())
+          `;
+          await client.query(voteInsert, [userId, entityId, voteValue]);
+        }
+        
+        // Update entity vote counts
+        if (upvoteChange !== 0 || downvoteChange !== 0) {
+          const tableName = singleEntityType === 'reply' ? 'thread_replies' : 
+                           (singleEntityType === 'comment' ? 'thread_comments' : 'threads');
+          
+          const updateEntityQuery = `
+            UPDATE ${tableName}
+            SET upvotes = upvotes + $1, downvotes = downvotes + $2
+            WHERE ${singleEntityType}_id = $3
+            RETURNING upvotes, downvotes
+          `;
+          
+          const updateResult = await client.query(updateEntityQuery, [
+            upvoteChange, 
+            downvoteChange, 
+            entityId
+          ]);
+          
+          if (updateResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: `${singleEntityType} not found` });
+          }
+          
+          await client.query('COMMIT');
+          
+          return res.json({
+            upvotes: updateResult.rows[0].upvotes,
+            downvotes: updateResult.rows[0].downvotes,
+            userVote: voteValue
+          });
+        }
+      }
+      
+      await client.query('COMMIT');
+      
+      // If no changes were made, return current values
+      const currentQuery = `
+        SELECT upvotes, downvotes 
+        FROM ${singleEntityType === 'reply' ? 'thread_replies' : 
+              singleEntityType === 'comment' ? 'thread_comments' : 'threads'}
+        WHERE ${singleEntityType}_id = $1
+      `;
+      
+      const currentValues = await pool.query(currentQuery, [entityId]);
+      
+      res.json({
+        upvotes: currentValues.rows[0].upvotes,
+        downvotes: currentValues.rows[0].downvotes,
+        userVote: voteValue
+      });
+      
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Error processing vote:', err);
+    res.status(500).json({ error: 'Failed to process vote', details: err.message });
+  }
+});
+
+// Subscribe/unsubscribe to a thread
+app.post('/api/threads/:threadId/subscribe', isAuthenticated, async (req, res) => {
+  try {
+    const { threadId } = req.params;
+    const userId = req.session.userId;
+    
+    // Check if already subscribed
+    const checkQuery = `
+      SELECT 1 FROM thread_subscriptions 
+      WHERE user_id = $1 AND thread_id = $2
+    `;
+    
+    const checkResult = await pool.query(checkQuery, [userId, threadId]);
+    const isAlreadySubscribed = checkResult.rows.length > 0;
+    
+    if (isAlreadySubscribed) {
+      // Unsubscribe
+      await pool.query(
+        'DELETE FROM thread_subscriptions WHERE user_id = $1 AND thread_id = $2',
+        [userId, threadId]
+      );
+      
+      res.json({ subscribed: false });
+    } else {
+      // Subscribe
+      await pool.query(
+        'INSERT INTO thread_subscriptions (user_id, thread_id, created_at) VALUES ($1, $2, NOW())',
+        [userId, threadId]
+      );
+      
+      res.json({ subscribed: true });
+    }
+  } catch (err) {
+    console.error('Error toggling subscription:', err);
+    res.status(500).json({ error: 'Failed to toggle subscription' });
+  }
+});
+
+// Get user's subscribed threads
+app.get('/api/user/subscribed-threads', isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    
+    const query = `
+      SELECT t.*, 
+             u.username, 
+             tc.name as category_name,
+             tc.color as category_color,
+             b.title as book_title,
+             COALESCE(COUNT(DISTINCT c.comment_id), 0) as comment_count
+      FROM threads t
+      JOIN thread_subscriptions ts ON t.thread_id = ts.thread_id
+      JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN thread_categories tc ON t.category_id = tc.category_id
+      LEFT JOIN books b ON t.book_id = b.id
+      LEFT JOIN thread_comments c ON t.thread_id = c.thread_id
+      WHERE ts.user_id = $1
+      GROUP BY t.thread_id, u.username, tc.name, tc.color, b.title, ts.created_at
+      ORDER BY t.updated_at DESC
+    `;
+    
+    const result = await pool.query(query, [userId]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching subscribed threads:', err);
+    res.status(500).json({ error: 'Failed to fetch subscribed threads' });
+  }
+});
+
 // Start the server
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  console.log(`Server running on port ${port}`);
 });

@@ -1,0 +1,163 @@
+.thread-detail-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.thread-navigation {
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.thread-navigation a {
+  color: var(--secondary-text-color, #777);
+  text-decoration: none;
+}
+
+.thread-navigation a:hover {
+  text-decoration: underline;
+}
+
+.nav-separator {
+  margin: 0 8px;
+  color: var(--secondary-text-color, #777);
+}
+
+.thread-header {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  background-color: var(--card-bg-color, #ffffff);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.thread-vote-container {
+  margin-right: 15px;
+}
+
+.thread-title-area {
+  flex: 1;
+}
+
+.thread-title {
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  color: var(--text-color, #333);
+}
+
+.thread-meta {
+  color: var(--secondary-text-color, #777);
+  font-size: 14px;
+}
+
+.thread-category {
+  background-color: #6c757d;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+.thread-actions {
+  margin-left: 15px;
+}
+
+.thread-content {
+  background-color: var(--card-bg-color, #ffffff);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+.thread-content p {
+  margin-bottom: 15px;
+}
+
+.thread-book-info {
+  display: flex;
+  background-color: var(--card-bg-color, #ffffff);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.book-cover {
+  width: 80px;
+  margin-right: 15px;
+}
+
+.book-cover img {
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+.book-details {
+  flex: 1;
+}
+
+.book-details h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 16px;
+  color: var(--secondary-text-color, #777);
+}
+
+.book-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--link-color, #0066cc);
+  text-decoration: none;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.book-title:hover {
+  text-decoration: underline;
+}
+
+.book-author {
+  font-size: 14px;
+  color: var(--secondary-text-color, #777);
+}
+
+.loading-spinner, .error-message {
+  text-align: center;
+  padding: 40px;
+  background-color: var(--card-bg-color, #ffffff);
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.error-message button {
+  margin-top: 15px;
+  padding: 8px 16px;
+  background-color: var(--primary-color, #0066cc);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .thread-header {
+    flex-direction: column;
+  }
+  
+  .thread-vote-container {
+    margin-bottom: 10px;
+    margin-right: 0;
+  }
+  
+  .thread-actions {
+    margin-left: 0;
+    margin-top: 15px;
+  }
+}

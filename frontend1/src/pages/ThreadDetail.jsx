@@ -1,436 +1,204 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { apiUrl } from '../config/config';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { ThemeContext } from '../components/ThemeContext';
-import '../css/threads.css';
+import CommentSection from '../components/CommentSection';
+import VoteButtons from '../components/VoteButtons';
+import SubscribeButton from '../components/SubscribeButton';
+import '../css/thread-detail.css';
 
 const ThreadDetail = () => {
   const { threadId } = useParams();
-  const navigate = useNavigate();
-  const { isDarkMode } = useContext(ThemeContext);
   const [thread, setThread] = useState(null);
   const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [commentLoading, setCommentLoading] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [userVote, setUserVote] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState('');
-  const [replyToComment, setReplyToComment] = useState(null);
-  const [replyContent, setReplyContent] = useState('');
-  const [replyLoading, setReplyLoading] = useState(false);
-
-  // Check login status
+  const navigate = useNavigate();
+  
   useEffect(() => {
-    const checkLoginStatus = async () => {
+    const fetchThreadData = async () => {
       try {
-        const response = await fetch(`${apiUrl}/isLoggedIn`, {
+        setLoading(true);
+        const response = await fetch(`http://localhost:4000/api/threads/${threadId}`, {
           credentials: 'include'
         });
         
-        if (response.status === 200) {
-          const data = await response.json();
-          setIsLoggedIn(true);
-          setUsername(data.username || '');
-        } else {
-          setIsLoggedIn(false);
-          setUsername('');
-        }
-      } catch (err) {
-        console.error('Error checking login status:', err);
-        setIsLoggedIn(false);
-        setUsername('');
-      }
-    };
-
-    checkLoginStatus();
-  }, []);
-
-  // Fetch thread details
-  useEffect(() => {
-    const fetchThread = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`${apiUrl}/api/threads/${threadId}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch thread');
-        }
-        const data = await response.json();
-        setThread(data);
-        document.title = `${data.title} | Thread Discussion`;
-      } catch (err) {
-        console.error('Error fetching thread:', err);
-        setError('Failed to load thread. It may have been deleted or does not exist.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchThread();
-  }, [threadId]);
-
-  // Fetch comments
-  useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        const response = await fetch(`${apiUrl}/api/threads/${threadId}/comments`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch comments');
-        }
-        const data = await response.json();
-        
-        // Organize comments into a parent-child structure
-        const parentComments = data.filter(comment => comment.comment_type === 'comment');
-        const replies = data.filter(comment => comment.comment_type === 'reply');
-        
-        // Add replies to their parent comments
-        const commentsWithReplies = parentComments.map(parent => {
-          const commentReplies = replies.filter(reply => reply.parent_id === parent.comment_id);
-          return {
-            ...parent,
-            replies: commentReplies
-          };
-        });
-        
-        setComments(commentsWithReplies);
-      } catch (err) {
-        console.error('Error fetching comments:', err);
-        setError('Failed to load comments');
-      }
-    };
-
-    if (threadId) {
-      fetchComments();
-    }
-  }, [threadId]);
-
-  const handleSubmitComment = async (e) => {
-    e.preventDefault();
-    
-    if (!newComment.trim()) {
-      return;
-    }
-
-    if (!isLoggedIn) {
-      navigate('/login');
-      return;
-    }
-
-    setCommentLoading(true);
-    
-    try {
-      const response = await fetch(`${apiUrl}/api/threads/${threadId}/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ content: newComment.trim() }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to post comment');
-      }
-
-      const data = await response.json();
-      
-      // Add the new comment to the comments array with comment_type
-      setComments(prevComments => [
-        ...prevComments, 
-        { 
-          ...data, 
-          comment_type: 'comment',
-          replies: [] 
-        }
-      ]);
-      setNewComment('');
-    } catch (err) {
-      console.error('Error posting comment:', err);
-      setError(`Failed to post comment: ${err.message}`);
-    } finally {
-      setCommentLoading(false);
-    }
-  };
-  
-  const handleSubmitReply = async (e) => {
-    e.preventDefault();
-    
-    if (!replyContent.trim() || !replyToComment) {
-      return;
-    }
-    
-    if (!isLoggedIn) {
-      navigate('/login');
-      return;
-    }
-    
-    setReplyLoading(true);
-    
-    try {
-      const response = await fetch(`${apiUrl}/api/threads/${threadId}/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ 
-          content: replyContent.trim(),
-          parentId: replyToComment.comment_id
-        }),
-      });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to post reply');
-      }
-      
-      const data = await response.json();
-      
-      // Add the new reply with comment_type
-      const replyWithType = {
-        ...data,
-        comment_type: 'reply'
-      };
-      
-      // Add the new reply to the comments structure
-      setComments(prevComments => {
-        return prevComments.map(comment => {
-          if (comment.comment_id === replyToComment.comment_id) {
-            return {
-              ...comment,
-              replies: [...(comment.replies || []), replyWithType]
-            };
+          if (response.status === 404) {
+            setError('Thread not found');
+          } else {
+            setError('Failed to fetch thread');
           }
-          return comment;
-        });
-      });
-      
-      // Reset reply form
-      setReplyContent('');
-      setReplyToComment(null);
-    } catch (err) {
-      console.error('Error posting reply:', err);
-      setError(`Failed to post reply: ${err.message}`);
-    } finally {
-      setReplyLoading(false);
-    }
-  };
+          return;
+        }
+        
+        const data = await response.json();
+        setThread(data.thread);
+        setComments(data.comments);
+        setIsSubscribed(data.isSubscribed);
+        setUserVote(data.userVote);
+      } catch (error) {
+        console.error('Error fetching thread:', error);
+        setError('Error loading thread');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchThreadData();
+  }, [threadId]);
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  };
-
-  // Handle thread deletion
-  const handleDeleteThread = async () => {
-    if (!window.confirm('Delete this thread?')) {
-      return;
-    }
-
+  const handleAddComment = async (content) => {
     try {
-      const response = await fetch(`${apiUrl}/api/threads/${threadId}`, {
-        method: 'DELETE',
+      const response = await fetch(`http://localhost:4000/api/threads/${threadId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content }),
         credentials: 'include',
       });
-
+      
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to delete thread');
+        throw new Error('Failed to post comment');
       }
-
-      navigate('/threads');
-    } catch (err) {
-      console.error('Error deleting thread:', err);
-      setError(`Failed to delete thread: ${err.message}`);
+      
+      const newComment = await response.json();
+      setComments([...comments, newComment]);
+      
+      // Update thread comment count
+      if (thread) {
+        setThread({
+          ...thread,
+          comment_count: thread.comment_count + 1,
+        });
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error posting comment:', error);
+      throw error;
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className={isDarkMode ? 'dark-mode' : ''}>
+      <div>
         <Navbar />
-        <div className="simple-container">
-          <p>Loading...</p>
+        <div className="thread-detail-container">
+          <div className="loading-spinner">Loading thread...</div>
         </div>
       </div>
     );
   }
 
-  if (error && !thread) {
+  if (error) {
     return (
-      <div className={isDarkMode ? 'dark-mode' : ''}>
+      <div>
         <Navbar />
-        <div className="simple-container">
-          <p>{error}</p>
-          <Link to="/threads">Back to Threads</Link>
+        <div className="thread-detail-container">
+          <div className="error-message">
+            <h3>{error}</h3>
+            <button onClick={() => navigate('/threads')}>Back to Threads</button>
+          </div>
         </div>
       </div>
     );
   }
-
-  // Calculate total comment count including replies
-  const getTotalCommentCount = () => {
-    return comments.reduce((count, comment) => {
-      return count + 1 + (comment.replies?.length || 0);
-    }, 0);
-  };
 
   return (
-    <div className={isDarkMode ? 'dark-mode' : ''}>
+    <div>
       <Navbar />
-      <div className="simple-container">
+      <div className="thread-detail-container">
         {thread && (
-          <div className="simple-thread">
-            <div className="simple-nav">
-              <Link to="/threads">Back to Threads</Link>
+          <>
+            <div className="thread-navigation">
+              <Link to="/threads">Threads</Link>
+              {thread.category_name && (
+                <>
+                  <span className="nav-separator">/</span>
+                  <Link to={`/threads/category/${thread.category_id}`}>{thread.category_name}</Link>
+                </>
+              )}
             </div>
             
-            <h1>{thread.title}</h1>
-            <div className="simple-meta">
-              <span>Posted by: {thread.username}</span>
-              <span>{formatDate(thread.created_at)}</span>
-              {thread.category_name && <span>Category: {thread.category_name}</span>}
+            <div className="thread-header">
+              <div className="thread-vote-container">
+                <VoteButtons 
+                  entityType="thread" 
+                  entityId={thread.thread_id} 
+                  initialUpvotes={thread.upvotes}
+                  initialDownvotes={thread.downvotes}
+                  initialUserVote={userVote}
+                />
+              </div>
+              
+              <div className="thread-title-area">
+                <h1 className="thread-title">
+                  {thread.is_pinned && <span className="pinned-indicator">📌 </span>}
+                  {thread.title}
+                </h1>
+                
+                <div className="thread-meta">
+                  Posted by <Link to={`/user/${thread.username}`}>{thread.username}</Link> 
+                  {' '}&bull;{' '}
+                  {new Date(thread.created_at).toLocaleString()}
+                  {' '}&bull;{' '}
+                  {thread.view_count} views
+                  {thread.category_name && (
+                    <>
+                      {' '}&bull;{' '}
+                      <span 
+                        className="thread-category" 
+                        style={{ backgroundColor: thread.category_color || '#6c757d' }}
+                      >
+                        {thread.category_name}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              <div className="thread-actions">
+                <SubscribeButton 
+                  threadId={thread.thread_id} 
+                  initialIsSubscribed={isSubscribed} 
+                />
+              </div>
             </div>
             
-            <div className="simple-content">
-              {thread.content.split('\n').map((paragraph, index) => (
-                paragraph ? <p key={index}>{paragraph}</p> : <br key={index} />
+            {thread.book_title && (
+              <div className="thread-book-info">
+                <div className="book-cover">
+                  {thread.book_coverurl && (
+                    <img src={thread.book_coverurl} alt={thread.book_title} />
+                  )}
+                </div>
+                <div className="book-details">
+                  <h3>Related Book</h3>
+                  <Link to={`/books/${thread.book_id}`} className="book-title">
+                    {thread.book_title}
+                  </Link>
+                  {thread.book_author && (
+                    <div className="book-author">by {thread.book_author}</div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            <div className="thread-content">
+              {thread.content.split('\n').map((paragraph, i) => (
+                <p key={i}>{paragraph}</p>
               ))}
             </div>
             
-            <div className="simple-actions">
-              {isLoggedIn && thread.username === username && (
-                <>
-                  <Link to={`/threads/${threadId}/edit`}>Edit</Link>
-                  <button onClick={handleDeleteThread}>Delete</button>
-                </>
-              )}
-              <Link to={`/threads/${threadId}/reply`}>Reply</Link>
-            </div>
-            
-            <div className="simple-comments">
-              <h2>Comments ({getTotalCommentCount()})</h2>
-              
-              {isLoggedIn ? (
-                <form onSubmit={handleSubmitComment} className="simple-form">
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Add a comment"
-                    required
-                    disabled={commentLoading}
-                  />
-                  <button 
-                    type="submit" 
-                    disabled={commentLoading || !newComment.trim()}
-                  >
-                    {commentLoading ? 'Posting...' : 'Post'}
-                  </button>
-                </form>
-              ) : (
-                <p className="simple-login">
-                  <Link to="/login">Log in</Link> to comment
-                </p>
-              )}
-              
-              {error && <p className="simple-error">{error}</p>}
-              
-              <div className="simple-comments-list">
-                {comments.length === 0 ? (
-                  <p>No comments yet</p>
-                ) : (
-                  comments.map(comment => (
-                    <div key={comment.comment_id} className="simple-comment">
-                      <div className="simple-comment-header">
-                        <span className="comment-username">{comment.username}</span>
-                        <span>{formatDate(comment.created_at)}</span>
-                      </div>
-                      <div className="simple-comment-content">
-                        {comment.content.split('\n').map((paragraph, index) => (
-                          paragraph ? <p key={index}>{paragraph}</p> : <br key={index} />
-                        ))}
-                      </div>
-                      
-                      {isLoggedIn && (
-                        <div className="comment-actions">
-                          <button 
-                            className="reply-btn"
-                            onClick={() => setReplyToComment(comment)}
-                          >
-                            Reply
-                          </button>
-                        </div>
-                      )}
-                      
-                      {replyToComment && replyToComment.comment_id === comment.comment_id && (
-                        <div className="reply-form">
-                          <form onSubmit={handleSubmitReply} className="simple-form">
-                            <textarea
-                              value={replyContent}
-                              onChange={(e) => setReplyContent(e.target.value)}
-                              placeholder={`Reply to ${replyToComment.username}`}
-                              required
-                              disabled={replyLoading}
-                            />
-                            <div className="reply-form-actions">
-                              <button
-                                type="button"
-                                className="cancel-reply-btn"
-                                onClick={() => {
-                                  setReplyToComment(null);
-                                  setReplyContent('');
-                                }}
-                              >
-                                Cancel
-                              </button>
-                              <button 
-                                type="submit" 
-                                disabled={replyLoading || !replyContent.trim()}
-                              >
-                                {replyLoading ? 'Posting...' : 'Post Reply'}
-                              </button>
-                            </div>
-                          </form>
-                        </div>
-                      )}
-                      
-                      {comment.replies && comment.replies.length > 0 && (
-                        <div className="comment-replies">
-                          <div style={{ 
-                            fontSize: '0.8rem', 
-                            color: 'var(--primary)', 
-                            marginBottom: '0.5rem',
-                            fontWeight: 'bold'
-                          }}>
-                            Replies ({comment.replies.length})
-                          </div>
-                          {comment.replies.map(reply => (
-                            <div key={reply.comment_id} className="simple-reply">
-                              <div className="simple-reply-header">
-                                <span className="reply-username" style={{ display: 'flex', alignItems: 'center' }}>
-                                  <span style={{ marginRight: '0.25rem', color: 'var(--primary)' }}>↪</span>
-                                  {reply.username}
-                                </span>
-                                <span>{formatDate(reply.created_at)}</span>
-                              </div>
-                              <div className="simple-reply-content">
-                                {reply.content.split('\n').map((paragraph, index) => (
-                                  paragraph ? <p key={index}>{paragraph}</p> : <br key={index} />
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
+            <CommentSection 
+              comments={comments} 
+              threadId={thread.thread_id} 
+              onAddComment={handleAddComment} 
+            />
+          </>
         )}
       </div>
     </div>

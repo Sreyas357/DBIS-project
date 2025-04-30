@@ -1,0 +1,187 @@
+.comments-section {
+  margin-top: 30px;
+}
+
+.comments-section h3 {
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+
+.comment-form {
+  margin-bottom: 30px;
+}
+
+.comment-form textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  background-color: var(--input-bg-color, #fff);
+  color: var(--text-color, #333);
+}
+
+.comment-submit-btn {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background-color: #1e88e5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.comment-submit-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.comment-submit-btn:hover:not(:disabled) {
+  background-color: #1976d2;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.comment {
+  display: flex;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: var(--card-bg-color, #ffffff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.comment-vote-area {
+  margin-right: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 30px;
+}
+
+.comment-vote-count {
+  font-weight: bold;
+}
+
+.comment-content {
+  flex: 1;
+}
+
+.comment-header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.comment-author {
+  font-weight: bold;
+  text-decoration: none;
+  color: var(--link-color, #0066cc);
+}
+
+.comment-date {
+  color: var(--secondary-text-color, #777);
+  font-size: 12px;
+}
+
+.comment-text {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.reply-button, .show-replies-button {
+  background: none;
+  border: none;
+  color: var(--secondary-text-color, #777);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 0;
+}
+
+.reply-button:hover, .show-replies-button:hover {
+  color: var(--text-color, #333);
+}
+
+.replies-section {
+  margin-top: 15px;
+  margin-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reply {
+  display: flex;
+  padding: 10px;
+  border-left: 2px solid #e0e0e0;
+  background-color: var(--card-bg-color, #ffffff);
+}
+
+.reply-vote-area {
+  margin-right: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 20px;
+}
+
+.reply-vote-count {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.reply-content {
+  flex: 1;
+}
+
+.reply-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.reply-author {
+  font-weight: bold;
+  font-size: 13px;
+  text-decoration: none;
+  color: var(--link-color, #0066cc);
+}
+
+.reply-date {
+  color: var(--secondary-text-color, #777);
+  font-size: 11px;
+}
+
+.reply-text {
+  margin-bottom: 8px;
+  line-height: 1.4;
+  font-size: 13px;
+}
+
+.reply-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.no-comments {
+  text-align: center;
+  color: var(--secondary-text-color, #777);
+  padding: 20px;
+}
+
+/* Dark mode adjustments handled through CSS variables in theme.css */

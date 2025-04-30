@@ -73,7 +73,7 @@ const BookDetails = () => {
                     });
                     if (reviewResponse.ok) {
                         const reviews = await reviewResponse.json();
-                        setUserReview(reviews.find(r => r.book_id == id));
+                        setUserReview(reviews.find(r => r.book_id === id));
                     }
                 } catch (e) {
                     console.log("No user review found");
@@ -139,7 +139,7 @@ const BookDetails = () => {
                                 <div className="user-rating">
                                     <span>Your rating:</span>
                                     <StarRating
-                                        rating={userReview?.rating || 0}
+                                        rating={userReview === null ? (book.avg_rating || 0) : userReview.rating}
                                         interactive={true}
                                         onRate={handleRateBook}
                                     />

@@ -1,27 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ThreadList from '../components/ThreadList';
 import ThreadCategoriesList from '../components/ThreadCategoriesList';
 import '../css/threads.css';
 
-const Threads = () => {
+const ThreadsByCategory = () => {
+  const { categoryId } = useParams();
   const [threads, setThreads] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [categoryName, setCategoryName] = useState('');
   const [loading, setLoading] = useState(true);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const [filter, setFilter] = useState('trending'); // trending, newest, top
   const navigate = useNavigate();
   
   useEffect(() => {
     const fetchThreadsData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:4000/api/threads/${filter}`);
+        const response = await fetch(`http://localhost:4000/api/threads/category/${categoryId}`);
         
         if (response.ok) {
           const data = await response.json();
           setThreads(data);
+          if (data.length > 0) {
+            setCategoryName(data[0].category_name);
+          }
         } else {
           console.error('Failed to fetch threads');
         }
@@ -33,7 +37,7 @@ const Threads = () => {
     };
     
     fetchThreadsData();
-  }, [filter]);
+  }, [categoryId]);
   
   useEffect(() => {
     const fetchCategories = async () => {
@@ -44,6 +48,14 @@ const Threads = () => {
         if (response.ok) {
           const data = await response.json();
           setCategories(data);
+          
+          // Set category name if not already set from threads
+          if (!categoryName && data.length > 0) {
+            const category = data.find(cat => cat.category_id.toString() === categoryId);
+            if (category) {
+              setCategoryName(category.name);
+            }
+          }
         } else {
           console.error('Failed to fetch thread categories');
         }
@@ -55,7 +67,7 @@ const Threads = () => {
     };
     
     fetchCategories();
-  }, []);
+  }, [categoryId, categoryName]);
 
   return (
     <div>
@@ -65,34 +77,17 @@ const Threads = () => {
           <ThreadCategoriesList 
             categories={categories} 
             loading={categoriesLoading} 
-            selectedCategoryId="all"
+            selectedCategoryId={categoryId}
           />
         </div>
         <div className="threads-main">
+          <div className="thread-category-header">
+            <h2>{categoryName || 'Category Threads'}</h2>
+          </div>
           <div className="thread-actions-bar">
-            <div className="threads-filters">
-              <button 
-                className={`threads-filter-button ${filter === 'trending' ? 'active' : ''}`}
-                onClick={() => setFilter('trending')}
-              >
-                Trending
-              </button>
-              <button 
-                className={`threads-filter-button ${filter === 'newest' ? 'active' : ''}`}
-                onClick={() => setFilter('newest')}
-              >
-                Newest
-              </button>
-              <button 
-                className={`threads-filter-button ${filter === 'top' ? 'active' : ''}`}
-                onClick={() => setFilter('top')}
-              >
-                Top
-              </button>
-            </div>
             <button 
               className="create-thread-button"
-              onClick={() => navigate('/threads/create')}
+              onClick={() => navigate(`/threads/create?category=${categoryId}`)}
             >
               Create Thread
             </button>
@@ -104,4 +99,4 @@ const Threads = () => {
   );
 };
 
-export default Threads;
+export default ThreadsByCategory;

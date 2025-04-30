@@ -11,11 +11,14 @@ import BookDetails from "./pages/BookDetails";
 import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
 import Messages from "./pages/Messages";
-import Temp from "./pages/Temp"
-import Threads from "./pages/Threads"
-import ThreadDetail from "./pages/ThreadDetail"
-import EditThread from "./pages/EditThread"
-import CreateThread from "./pages/CreateThread"
+import Temp from "./pages/Temp";
+// Import Thread pages
+import Threads from "./pages/Threads";
+import ThreadsByCategory from "./pages/ThreadsByCategory";
+import ThreadDetail from "./pages/ThreadDetail";
+import CreateThread from "./pages/CreateThread";
+import SubscribedThreads from "./pages/SubscribedThreads";
+
 import { ThemeProvider } from "./components/ThemeContext";
 import ThemeToggle from "./components/ThemeToggle";
 import { useEffect, useState } from "react";
@@ -50,13 +53,15 @@ function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/temp" element={<Temp />} />
         <Route path="/messages/:userId" element={<Messages />} />
+        
+        {/* Thread Routes */}
         <Route path="/threads" element={<Threads />} />
+        <Route path="/threads/category/:categoryId" element={<ThreadsByCategory />} />
+        <Route path="/threads/subscribed" element={<SubscribedThreads />} />
+        <Route path="/threads/create" element={<CreateThread />} />
         <Route path="/threads/:threadId" element={<ThreadDetail />} />
-        <Route path="/threads/:threadId/edit" element={<EditThread />} />
-        <Route path="/create-thread" element={<CreateThread />} />
-        <Route path="/threads/:threadId/reply" element={<CreateThread />} />
+       
         <Route path="*" element={<NotFound />} />
-        {/* Add more routes as needed */}
       </Routes>
       
       {showHelp && (
