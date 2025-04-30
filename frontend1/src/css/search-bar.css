@@ -1,0 +1,121 @@
+.search-bar-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.search-form {
+  display: flex;
+  width: 100%;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 24px 0 0 24px;
+  font-size: 16px;
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.search-input:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 1px 6px rgba(108, 99, 255, 0.2);
+}
+
+.search-button {
+  background-color: #6c63ff;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 0 24px 24px 0;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.search-button i {
+  margin-right: 8px;
+}
+
+.search-button:hover {
+  background-color: #5a52d5;
+}
+
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 400px;
+  overflow-y: auto;
+  background: white;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  margin-top: -2px;
+  border: 1px solid #dcdcdc;
+}
+
+.search-results-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.search-result-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.search-result-item:hover,
+.search-result-item.highlighted {
+  background-color: #f5f5ff;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-title {
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.search-result-meta {
+  font-size: 13px;
+  color: #6c757d;
+  display: flex;
+  justify-content: space-between;
+}
+
+.search-result-book {
+  margin-left: 8px;
+}
+
+.search-more {
+  padding: 12px 16px;
+  text-align: center;
+  font-weight: 500;
+  color: #6c63ff;
+  cursor: pointer;
+  background-color: #f8f9fa;
+}
+
+.search-more:hover,
+.search-more.highlighted {
+  background-color: #f0f0ff;
+}
+
+.search-loading,
+.search-no-results {
+  padding: 16px;
+  text-align: center;
+  color: #6c757d;
+}

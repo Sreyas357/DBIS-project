@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ThreadList from '../components/ThreadList';
 import ThreadCategoriesList from '../components/ThreadCategoriesList';
+import SearchBar from '../components/SearchBar';
 import '../css/threads.css';
 
 const Threads = () => {
@@ -10,14 +11,33 @@ const Threads = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const [filter, setFilter] = useState('trending'); // trending, newest, top
+  const [filter, setFilter] = useState('trending'); // trending, newest, most-commented, most-viewed
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Parse query params on initial load
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const queryParam = params.get('q');
+    const filterParam = params.get('filter');
+    
+    if (queryParam) setSearchQuery(queryParam);
+    if (filterParam) setFilter(filterParam);
+  }, [location.search]);
   
   useEffect(() => {
     const fetchThreadsData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:4000/api/threads/${filter}`);
+        let url = `http://localhost:4000/api/threads/${filter}`;
+        
+        // Add search query if present
+        if (searchQuery) {
+          url = `http://localhost:4000/api/threads/search?q=${encodeURIComponent(searchQuery)}&sort=${filter}`;
+        }
+        
+        const response = await fetch(url);
         
         if (response.ok) {
           const data = await response.json();
@@ -33,7 +53,16 @@ const Threads = () => {
     };
     
     fetchThreadsData();
-  }, [filter]);
+    
+    // Update URL with current search/filter
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('q', searchQuery);
+    if (filter !== 'trending') params.set('filter', filter);
+    
+    const newSearch = params.toString() ? `?${params.toString()}` : '';
+    navigate(`/threads${newSearch}`, { replace: true });
+    
+  }, [filter, searchQuery, navigate]);
   
   useEffect(() => {
     const fetchCategories = async () => {
@@ -57,6 +86,18 @@ const Threads = () => {
     fetchCategories();
   }, []);
 
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+  };
+  
+  const clearSearch = () => {
+    setSearchQuery('');
+  };
+  
+  const handleSortChange = (e) => {
+    setFilter(e.target.value);
+  };
+
   return (
     <div>
       <Navbar />
@@ -69,26 +110,31 @@ const Threads = () => {
           />
         </div>
         <div className="threads-main">
+          <div className="search-and-filter-row">
+            <SearchBar 
+              onSearch={handleSearch}
+              categoryId="all"
+            />
+          </div>
+          
           <div className="thread-actions-bar">
-            <div className="threads-filters">
-              <button 
-                className={`threads-filter-button ${filter === 'trending' ? 'active' : ''}`}
-                onClick={() => setFilter('trending')}
+            <div className="thread-sort-container">
+              {searchQuery && (
+                <div className="search-status">
+                  <span>Results for "{searchQuery}"</span>
+                  <button className="clear-search-btn" onClick={clearSearch}>✕</button>
+                </div>
+              )}
+              <select 
+                value={filter} 
+                onChange={handleSortChange}
+                className="thread-sort-select"
               >
-                Trending
-              </button>
-              <button 
-                className={`threads-filter-button ${filter === 'newest' ? 'active' : ''}`}
-                onClick={() => setFilter('newest')}
-              >
-                Newest
-              </button>
-              <button 
-                className={`threads-filter-button ${filter === 'top' ? 'active' : ''}`}
-                onClick={() => setFilter('top')}
-              >
-                Top
-              </button>
+                <option value="trending">Trending</option>
+                <option value="newest">Newest</option>
+                <option value="most-commented">Most Commented</option>
+                <option value="most-viewed">Most Views</option>
+              </select>
             </div>
             <button 
               className="create-thread-button"

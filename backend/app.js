@@ -716,7 +716,7 @@ app.get('/api/thread-categories', async (req, res) => {
   }
 });
 
-// Get trending threads
+// / Get trending threads
 app.get('/api/threads/trending', async (req, res) => {
   try {
     const { limit = 10, offset = 0 } = req.query;
@@ -781,6 +781,76 @@ app.get('/api/threads/newest', async (req, res) => {
   }
 });
 
+// Fix the most-commented endpoint - add table aliases to prevent ambiguous column references
+app.get('/api/threads/most-commented', async (req, res) => {
+  try {
+    const { limit = 10, offset = 0 } = req.query;
+    
+    const query = `
+      SELECT t.thread_id, t.title, t.content, t.user_id, t.category_id, t.book_id, 
+             t.is_pinned, t.is_locked, t.view_count, t.upvotes, t.downvotes, 
+             t.created_at, t.updated_at,
+             u.username, 
+             tc.name as category_name,
+             tc.color as category_color,
+             b.title as book_title,
+             COALESCE(COUNT(DISTINCT c.comment_id), 0) as comment_count
+      FROM threads t
+      JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN thread_categories tc ON t.category_id = tc.category_id
+      LEFT JOIN books b ON t.book_id = b.id
+      LEFT JOIN thread_comments c ON t.thread_id = c.thread_id
+      GROUP BY t.thread_id, u.username, tc.name, tc.color, b.title
+      ORDER BY 
+        CASE WHEN t.is_pinned THEN 1 ELSE 0 END DESC,
+        COALESCE(COUNT(DISTINCT c.comment_id), 0) DESC,
+        t.created_at DESC
+      LIMIT $1 OFFSET $2
+    `;
+    
+    const result = await pool.query(query, [limit, offset]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching most commented threads:', err);
+    res.status(500).json({ error: 'Failed to fetch most commented threads' });
+  }
+});
+
+// Fix the most-viewed endpoint - add table aliases
+app.get('/api/threads/most-viewed', async (req, res) => {
+  try {
+    const { limit = 10, offset = 0 } = req.query;
+    
+    const query = `
+      SELECT t.thread_id, t.title, t.content, t.user_id, t.category_id, t.book_id, 
+             t.is_pinned, t.is_locked, t.view_count, t.upvotes, t.downvotes, 
+             t.created_at, t.updated_at,
+             u.username, 
+             tc.name as category_name,
+             tc.color as category_color,
+             b.title as book_title,
+             COALESCE(COUNT(DISTINCT c.comment_id), 0) as comment_count
+      FROM threads t
+      JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN thread_categories tc ON t.category_id = tc.category_id
+      LEFT JOIN books b ON t.book_id = b.id
+      LEFT JOIN thread_comments c ON t.thread_id = c.thread_id
+      GROUP BY t.thread_id, u.username, tc.name, tc.color, b.title
+      ORDER BY 
+        CASE WHEN t.is_pinned THEN 1 ELSE 0 END DESC,
+        t.view_count DESC,
+        t.created_at DESC
+      LIMIT $1 OFFSET $2
+    `;
+    
+    const result = await pool.query(query, [limit, offset]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching most viewed threads:', err);
+    res.status(500).json({ error: 'Failed to fetch most viewed threads' });
+  }
+});
+
 // Get top threads
 app.get('/api/threads/top', async (req, res) => {
   try {
@@ -814,14 +884,33 @@ app.get('/api/threads/top', async (req, res) => {
   }
 });
 
-// Get threads by category
+// Fix the category route - add table aliases and fix the ORDER BY clause
 app.get('/api/threads/category/:categoryId', async (req, res) => {
   try {
     const { categoryId } = req.params;
-    const { limit = 10, offset = 0 } = req.query;
+    const { limit = 10, offset = 0, sort = 'trending' } = req.query;
+    
+    let orderBy = '';
+    switch (sort) {
+      case 'newest':
+        orderBy = 't.created_at DESC';
+        break;
+      case 'most-commented':
+        orderBy = 'comment_count DESC';
+        break;
+      case 'most-viewed':
+        orderBy = 't.view_count DESC';
+        break;
+      case 'trending':
+      default:
+        orderBy = '(t.upvotes - t.downvotes) * 0.7 + t.view_count * 0.3 DESC';
+    }
     
     const query = `
-      SELECT t.*, 
+      SELECT t.thread_id, t.title, t.content, t.user_id, t.category_id, t.book_id, 
+             t.is_pinned, t.is_locked, t.view_count, t.upvotes, t.downvotes, 
+             t.comment_count as stored_comment_count,
+             t.created_at, t.updated_at,
              u.username, 
              tc.name as category_name,
              tc.color as category_color,
@@ -833,9 +922,10 @@ app.get('/api/threads/category/:categoryId', async (req, res) => {
       LEFT JOIN books b ON t.book_id = b.id
       LEFT JOIN thread_comments c ON t.thread_id = c.thread_id
       WHERE t.category_id = $1
-      GROUP BY t.thread_id, u.username, tc.name, tc.color, b.title
+      GROUP BY t.thread_id, t.comment_count, u.username, tc.name, tc.color, b.title
       ORDER BY 
         CASE WHEN t.is_pinned THEN 1 ELSE 0 END DESC,
+        ${orderBy},
         t.created_at DESC
       LIMIT $2 OFFSET $3
     `;
@@ -876,10 +966,99 @@ app.get('/api/threads/book/:bookId', async (req, res) => {
   }
 });
 
-// Get thread by ID with comments - Update to better process nested replies
+// Fix the search endpoint - explicitly list all columns and avoid ambiguity
+app.get('/api/threads/search', async (req, res) => {
+  try {
+    const { q, category, sort = 'trending' } = req.query;
+    
+    // Skip processing if query is too short
+    if (!q || q.trim().length < 2) {
+      return res.json([]);
+    }
+    
+    let query = `
+      SELECT t.thread_id, t.title, t.created_at, t.upvotes, t.downvotes, 
+             t.comment_count as stored_comment_count, t.view_count, 
+             u.username, u.user_id,
+             tc.name AS category_name, tc.color AS category_color, tc.category_id, 
+             b.id AS book_id, b.title AS book_title, b.author AS book_author,
+             COALESCE(COUNT(DISTINCT c.comment_id), 0) as comment_count
+      FROM threads t
+      JOIN users u ON t.user_id = u.user_id
+      LEFT JOIN thread_categories tc ON t.category_id = tc.category_id
+      LEFT JOIN books b ON t.book_id = b.id
+      LEFT JOIN thread_comments c ON t.thread_id = c.thread_id
+      WHERE (
+        LOWER(t.title) LIKE LOWER($1) OR 
+        LOWER(u.username) LIKE LOWER($1) OR 
+        LOWER(t.content) LIKE LOWER($1) OR
+        (b.title IS NOT NULL AND LOWER(b.title) LIKE LOWER($1)) OR
+        (b.author IS NOT NULL AND LOWER(b.author) LIKE LOWER($1))
+      )
+    `;
+    
+    const params = [`%${q}%`];
+    let paramIndex = 2;
+    
+    // Add category filter if provided
+    if (category && category !== 'all' && category !== 'subscribed') {
+      query += ` AND t.category_id = $${paramIndex}`;
+      params.push(category);
+      paramIndex++;
+    }
+    
+    // Add GROUP BY clause for aggregation
+    query += `
+      GROUP BY t.thread_id, t.comment_count, u.user_id, u.username, 
+              tc.category_id, tc.name, tc.color, 
+              b.id, b.title, b.author
+    `;
+    
+    // Add sorting
+    switch (sort) {
+      case 'newest':
+        query += ` ORDER BY t.created_at DESC`;
+        break;
+      case 'most-commented':
+        query += ` ORDER BY comment_count DESC`;
+        break;
+      case 'most-viewed':
+        query += ` ORDER BY t.view_count DESC`;
+        break;
+      case 'trending':
+      default:
+        // Trending algorithm - can be adjusted based on your definition
+        query += ` ORDER BY (COALESCE(COUNT(DISTINCT c.comment_id), 0) * 2 + t.view_count + (t.upvotes - t.downvotes) * 3) DESC`;
+    }
+    
+    // Always add a secondary sort by newest
+    query += `, t.created_at DESC`;
+    
+    // Add limit for dropdown results
+    const isForDropdown = !req.query.full;
+    if (isForDropdown) {
+      query += ` LIMIT 10`;
+    }
+    
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+    
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'An error occurred while searching threads' });
+  }
+});
+
+// Make sure your thread detail route comes AFTER all the other specific routes
 app.get('/api/threads/:threadId', async (req, res) => {
   try {
     const { threadId } = req.params;
+    
+    // Check if threadId is a valid integer to avoid the error
+    if (!/^\d+$/.test(threadId)) {
+      return res.status(400).json({ error: 'Invalid thread ID. Thread ID must be a number.' });
+    }
+    
     const client = await pool.connect();
     
     try {
