@@ -32,6 +32,17 @@ async function loadDDL() {
   }
 }
 
+async function loadData() {
+  try {
+    const ddl = await fs.readFile('./data.sql', 'utf-8');
+    await pool.query(ddl);
+    console.log("✅ Data loaded successfully");
+  } catch (err) {
+    console.error("❌ Failed to load DDL:", err.message);
+    process.exit(1); // Exit if schema setup fails
+  }
+}
+
 /**
  * Fetch books from a specific genre using Google Books API
  * @param {number} limit - Number of books to fetch (default: 10)
@@ -72,7 +83,7 @@ async function fetchBooks(limit = 10, subject = "fiction") {
         genres: volumeInfo.categories || [subject], // Use subject as fallback
         pageCount: volumeInfo.pageCount || "Unknown",
         publisher: volumeInfo.publisher || "Unknown",
-        rating: volumeInfo.averageRating || "Not rated",
+        rating: 0 || "Not rated",
         previewLink: volumeInfo.previewLink || null,
         isbn: volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_13')?.identifier || 
               volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_10')?.identifier || null
@@ -245,11 +256,14 @@ async function execute() {
     // Load database schema
     await loadDDL();
     
+    
     // Fetch books from all genres
     const allBooks = await fetchAllGenreBooks(10); // 10 books per genre
     
     // Insert books into database
     await insertBooks(allBooks);
+
+    await loadData();
     
     console.log("✅ Database population complete!");
   } catch (error) {

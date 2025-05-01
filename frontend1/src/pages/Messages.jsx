@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiUrl } from '../config/config';
 import Navbar from '../components/Navbar';
 import '../css/messages.css';
+import { useLocation } from 'react-router-dom';
 
 const Messages = () => {
     const [conversations, setConversations] = useState([]);
@@ -11,11 +12,43 @@ const Messages = () => {
     const [newConversationUser, setNewConversationUser] = useState('');
     const [error, setError] = useState(null);
     const [isSending, setIsSending] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+    
+    const messagesEndRef = useRef(null);
+    const searchInputRef = useRef(null);
+    const dropdownRef = useRef(null);
+    const location = useLocation();
+
+    // Auto-scroll to bottom when messages change
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target) && 
+                searchInputRef.current && !searchInputRef.current.contains(event.target)) {
+                setShowDropdown(false);
+            }
+        };
+        
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     // Fetch list of users you've messaged
     useEffect(() => {
         const fetchConversations = async () => {
             try {
+                setIsLoading(true);
                 const response = await fetch(`${apiUrl}/messages/conversations`, {
                     credentials: 'include'
                 });
@@ -23,6 +56,8 @@ const Messages = () => {
                 setConversations(data);
             } catch (err) {
                 console.error('Failed to fetch conversations', err);
+            } finally {
+                setIsLoading(false);
             }
         };
 
@@ -35,6 +70,7 @@ const Messages = () => {
 
         const fetchMessages = async () => {
             try {
+                setIsLoading(true);
                 const response = await fetch(`${apiUrl}/messages/${selectedUser.user_id}`, {
                     credentials: 'include'
                 });
@@ -42,14 +78,54 @@ const Messages = () => {
                 setMessages(data);
             } catch (err) {
                 console.error('Failed to load messages', err);
+            } finally {
+                setIsLoading(false);
             }
         };
 
         fetchMessages();
     }, [selectedUser]);
 
+    // Search for users as user types
+    useEffect(() => {
+        const searchUsers = async () => {
+            if (!newConversationUser.trim() || newConversationUser.length < 2) {
+                setSearchResults([]);
+                return;
+            }
+            
+            try {
+                setIsSearching(true);
+                const response = await fetch(`${apiUrl}/user/search?q=${encodeURIComponent(newConversationUser)}`, {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    setSearchResults(data);
+                    setShowDropdown(true);
+                }
+            } catch (err) {
+                console.error('Failed to search users', err);
+            } finally {
+                setIsSearching(false);
+            }
+        };
+
+        // Debounce search to avoid too many requests
+        const timeoutId = setTimeout(searchUsers, 300);
+        return () => clearTimeout(timeoutId);
+    }, [newConversationUser]);
+
+    // Auto-select user if passed via navigation state
+    useEffect(() => {
+        if (location.state && location.state.selectedUser) {
+            setSelectedUser(location.state.selectedUser);
+        }
+    }, [location.state]);
+
     const handleSendMessage = async () => {
-        if (!newMessage.trim()) return;
+        if (!newMessage.trim() || isSending) return;
 
         try {
             setIsSending(true);
@@ -66,7 +142,18 @@ const Messages = () => {
             });
 
             if (response.ok) {
-                await response.json();
+                const data = await response.json();
+                
+                // Add the new message to the messages list immediately
+                const newMessageObj = {
+                    message_id: data.message_id || Date.now(),
+                    sender_id: data.sender_id || null,
+                    recipient_id: selectedUser.user_id,
+                    message: newMessage,
+                    timestamp: new Date().toISOString()
+                };
+                
+                setMessages(prevMessages => [...prevMessages, newMessageObj]);
                 setNewMessage('');
 
                 // If the selected user wasn't already in conversations, add them
@@ -81,11 +168,37 @@ const Messages = () => {
         }
     };
 
-    const handleNewConversation = async () => {
-        if (!newConversationUser.trim()) return;
-        console.log('Starting new conversation with:', newConversationUser);
+    const handleUserSelect = async (user) => {
+        setSelectedUser(user);
+        setNewConversationUser('');
+        setShowDropdown(false);
+        setError(null);
 
         try {
+            setIsLoading(true);
+            const conversationResponse = await fetch(`${apiUrl}/messages/${user.user_id}`, {
+                credentials: 'include'
+            });
+
+            const conversationData = await conversationResponse.json();
+            setMessages(conversationData || []);
+            
+            // Add to conversations if not already there
+            if (!conversations.find(u => u.user_id === user.user_id)) {
+                setConversations(prev => [...prev, user]);
+            }
+        } catch (err) {
+            console.error('Failed to load conversation', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleNewConversation = async () => {
+        if (!newConversationUser.trim()) return;
+        
+        try {
+            setIsLoading(true);
             const response = await fetch(`${apiUrl}/user/messages/${newConversationUser}`, {
                 method: 'GET',
                 headers: {
@@ -93,40 +206,25 @@ const Messages = () => {
                 },
                 credentials: 'include'
             });
+            
             if (response.ok) {
                 const userData = await response.json();
-
-                console.log('Fetched userData:', userData);
-
-
-                const conversationResponse = await fetch(`${apiUrl}/messages/${userData.user_id}`, {
-                    // method: 'GET',
-                    // headers: {
-                    //     'Content-Type': 'application/json'
-                    // },
-                    credentials: 'include'
-                });
-
-                const conversationData = await conversationResponse.json();
-
-                if (conversationData.length > 0) {
-                    setSelectedUser(userData);
-                    setMessages(conversationData);
-                } else {
-                    setSelectedUser(userData);
-                    setMessages([]);
-                }
-
-                setNewConversationUser('');
-                setError(null);
+                handleUserSelect(userData);
             } else {
-                const data = await response.json();
-                setError(`User with username "${newConversationUser}" not found.`);
+                setError(`User "${newConversationUser}" not found.`);
             }
         } catch (err) {
             console.error('Failed to start new conversation', err);
             setError('Something went wrong.');
+        } finally {
+            setIsLoading(false);
         }
+    };
+
+    const formatTime = (timestamp) => {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
     return (
@@ -134,21 +232,60 @@ const Messages = () => {
             <Navbar />
             <div className="messages-container">
                 <div className="conversations-list">
-                    <h2>Conversations</h2>
+                    <h2>Messages</h2>
 
                     <div className="new-conversation">
-                        <input
-                            type="text"
-                            value={newConversationUser}
-                            onChange={(e) => setNewConversationUser(e.target.value)}
-                            placeholder="Start conversation with username..."
-                        />
-                        <button onClick={handleNewConversation}>Start</button>
+                        <div className="search-container">
+                            <input
+                                ref={searchInputRef}
+                                type="text"
+                                value={newConversationUser}
+                                onChange={(e) => setNewConversationUser(e.target.value)}
+                                onFocus={() => newConversationUser.length >= 2 && setShowDropdown(true)}
+                                placeholder="Search for users to message..."
+                                disabled={isLoading}
+                                className="search-input"
+                            />
+                            {isSearching && (
+                                <div className="search-indicator">
+                                    <div className="spinner"></div>
+                                </div>
+                            )}
+                            
+                            {showDropdown && searchResults.length > 0 && (
+                                <div className="search-dropdown" ref={dropdownRef}>
+                                    {searchResults.map(user => (
+                                        <div 
+                                            key={user.user_id}
+                                            className="dropdown-item"
+                                            onClick={() => handleUserSelect(user)}
+                                        >
+                                            <div className="dropdown-avatar">
+                                                {user.username.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="dropdown-user-info">
+                                                <span className="dropdown-username">{user.username}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        
+                        <button 
+                            onClick={handleNewConversation}
+                            disabled={isLoading || !newConversationUser.trim()}
+                            className={isLoading ? 'loading' : ''}
+                        >
+                            {isLoading ? 'Searching...' : 'New Message'}
+                        </button>
                         {error && <div className="error">{error}</div>}
                     </div>
 
-                    {conversations.length === 0 ? (
-                        <div>No conversations yet. Start one with a user!</div>
+                    {isLoading && conversations.length === 0 ? (
+                        <div className="loading-indicator">Loading conversations...</div>
+                    ) : conversations.length === 0 ? (
+                        <div className="empty-state">No conversations yet. Start one with a user!</div>
                     ) : (
                         conversations.map((user) => (
                             <div
@@ -156,7 +293,10 @@ const Messages = () => {
                                 className={`conversation-item ${selectedUser?.user_id === user.user_id ? 'active' : ''}`}
                                 onClick={() => setSelectedUser(user)}
                             >
-                                {user.username}
+                                <div className="avatar">{user.username.charAt(0).toUpperCase()}</div>
+                                <div className="user-info">
+                                    <span className="username">{user.username}</span>
+                                </div>
                             </div>
                         ))
                     )}
@@ -166,17 +306,23 @@ const Messages = () => {
                     {selectedUser ? (
                         <>
                             <div className="messages-header">
+                                <div className="selected-user-avatar">
+                                    {selectedUser.username.charAt(0).toUpperCase()}
+                                </div>
                                 <h2>Chat with {selectedUser.username}</h2>
                             </div>
 
                             <div className="messages-body">
-                                {messages.length > 0 ? (
+                                {isLoading ? (
+                                    <div className="loading-messages">Loading messages...</div>
+                                ) : messages.length > 0 ? (
                                     messages.map((msg, index) => (
                                         <div
                                             key={index}
                                             className={`message-item ${msg.sender_id === selectedUser?.user_id ? 'received' : 'sent'}`}
                                         >
-                                            {msg.message}
+                                            <div className="message-content">{msg.message}</div>
+                                            <div className="message-time">{formatTime(msg.timestamp)}</div>
                                         </div>
                                     ))
                                 ) : (
@@ -184,28 +330,38 @@ const Messages = () => {
                                         <p>No messages yet. Start the conversation!</p>
                                     </div>
                                 )}
+                                <div ref={messagesEndRef} />
                             </div>
-
 
                             <div className="message-input">
                                 <input
                                     type="text"
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
+                                    placeholder="Type a message..."
+                                    disabled={isSending}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault(); // prevent form submission if wrapped in a form
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
                                             handleSendMessage();
                                         }
                                     }}
-                                    placeholder="Type a message..."
                                 />
-                                <button onClick={handleSendMessage}>Send</button>
+                                <button 
+                                    onClick={handleSendMessage}
+                                    disabled={isSending || !newMessage.trim()}
+                                    className={isSending ? 'loading' : ''}
+                                >
+                                    {isSending ? 'Sending...' : 'Send'}
+                                </button>
                             </div>
-
                         </>
                     ) : (
-                        <div className="no-user-selected">Select a conversation to view messages</div>
+                        <div className="no-user-selected">
+                            <div className="empty-state-icon">💬</div>
+                            <h3>Select a conversation or start a new one</h3>
+                            <p>Choose a user from the sidebar to see your messages</p>
+                        </div>
                     )}
                 </div>
             </div>

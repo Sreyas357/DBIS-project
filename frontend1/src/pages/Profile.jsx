@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiUrl } from '../config/config';
 import Navbar from '../components/Navbar';
@@ -16,6 +16,10 @@ const Profile = () => {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(-1);
+    const searchRef = useRef(null);
+    const debounceTimeout = useRef(null);
 
     useEffect(() => {
         const fetchProfileData = async () => {
@@ -50,8 +54,44 @@ const Profile = () => {
         fetchProfileData();
     }, []);
 
+    // Handle click outside of search box to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setShowDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Debounced search as user types
+    useEffect(() => {
+        if (debounceTimeout.current) {
+            clearTimeout(debounceTimeout.current);
+        }
+
+        if (searchTerm.trim()) {
+            debounceTimeout.current = setTimeout(() => {
+                handleSearch();
+            }, 300);
+        } else {
+            setSearchResults([]);
+            setShowDropdown(false);
+        }
+
+        return () => {
+            if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+        };
+    }, [searchTerm]);
+
     const handleSearch = async () => {
-        if (!searchTerm.trim()) return;
+        if (!searchTerm.trim()) {
+            setSearchResults([]);
+            setShowDropdown(false);
+            return;
+        }
 
         try {
             const response = await fetch(`${apiUrl}/user/search?username=${searchTerm}`, {
@@ -60,18 +100,51 @@ const Profile = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                console.log(data);
-                setSearchResults(data.users.slice(0, 4)); // Limit to 4 results
+                setSearchResults(data.users.slice(0, 6)); // Limit to 6 results
+                setShowDropdown(data.users.length > 0);
+                setSelectedIndex(-1);
             } else {
                 console.error('Search failed');
+                setShowDropdown(false);
             }
         } catch (err) {
             console.error('Error during search:', err);
+            setShowDropdown(false);
         }
     };
 
     const handleUsernameClick = (username) => {
         navigate(`/user/${username}`);
+        setShowDropdown(false);
+        setSearchTerm('');
+    };
+
+    const handleKeyDown = (e) => {
+        if (!showDropdown || searchResults.length === 0) return;
+
+        // Arrow down
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setSelectedIndex(prev => 
+                prev < searchResults.length - 1 ? prev + 1 : 0
+            );
+        }
+        // Arrow up
+        else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setSelectedIndex(prev => 
+                prev > 0 ? prev - 1 : searchResults.length - 1
+            );
+        }
+        // Enter
+        else if (e.key === 'Enter' && selectedIndex >= 0) {
+            e.preventDefault();
+            handleUsernameClick(searchResults[selectedIndex].username);
+        }
+        // Escape
+        else if (e.key === 'Escape') {
+            setShowDropdown(false);
+        }
     };
 
     const { user, ratedBooks, loading, error } = userData;
@@ -112,7 +185,12 @@ const Profile = () => {
                             <div className="books-list">
                                 {ratedBooks.map(book => (
                                     <div key={book.book_id} className="book-card">
-                                        <div className="book-title">{book.title}</div>
+                                        <div 
+                                            className="book-title clickable"
+                                            onClick={() => navigate(`/books/${book.book_id}`)}
+                                        >
+                                            {book.title}
+                                        </div>
                                         <div className="book-author">by {book.author}</div>
                                         <div className="book-rating">
                                             <span>Your Rating: </span>
@@ -125,12 +203,6 @@ const Profile = () => {
                                                 <p>"{book.comment}"</p>
                                             </div>
                                         )}
-                                        <button
-                                            className="view-book-btn"
-                                            onClick={() => navigate(`/books/${book.book_id}`)}
-                                        >
-                                            View Book
-                                        </button>
                                     </div>
                                 ))}
                             </div>
@@ -142,21 +214,26 @@ const Profile = () => {
 
                 {/* Right Side - Search Box */}
                 <div className="search-section">
-                    <div className="search-box">
+                    <div className="search-box" ref={searchRef}>
                         <input
                             type="text"
                             placeholder="Search users by username..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            onFocus={() => {
+                                if (searchResults.length > 0) setShowDropdown(true);
+                            }}
+                            onKeyDown={handleKeyDown}
                         />
-                        <button onClick={handleSearch}>Search</button>
-                        {searchResults.length > 0 && (
+                        <button onClick={handleSearch} aria-label="Search"></button>
+                        {showDropdown && searchResults.length > 0 && (
                             <div className="search-dropdown">
-                                {searchResults.map((u) => (
+                                {searchResults.map((u, index) => (
                                     <div
                                         key={u.user_id}
-                                        className="search-result-item"
+                                        className={`search-result-item ${index === selectedIndex ? 'selected' : ''}`}
                                         onClick={() => handleUsernameClick(u.username)}
+                                        onMouseEnter={() => setSelectedIndex(index)}
                                     >
                                         {u.username}
                                     </div>
@@ -166,7 +243,6 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
-
         </>
     );
 };

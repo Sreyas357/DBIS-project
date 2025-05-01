@@ -73,9 +73,11 @@ const UserProfile = () => {
         }
     };
 
-    // Navigate to the message page
+    // Navigate to the message page and pass user info as state
     const handleMessage = () => {
-        navigate(`/messages/${user.user_id}`); // Redirect to the message page with user ID
+        if (user && user.user_id) {
+            navigate('/messages', { state: { selectedUser: { user_id: user.user_id, username: user.username } } });
+        }
     };
 
     const { user, ratedBooks, loading, error } = userData;
@@ -130,7 +132,12 @@ const UserProfile = () => {
                         <div className="books-list">
                             {ratedBooks.map(book => (
                                 <div key={book.book_id} className="book-card">
-                                    <div className="book-title">{book.title}</div>
+                                    <div 
+                                        className="book-title clickable"
+                                        onClick={() => navigate(`/books/${book.book_id}`)}
+                                    >
+                                        {book.title}
+                                    </div>
                                     <div className="book-author">by {book.author}</div>
                                     <div className="book-rating">
                                         <span>Rating: </span>

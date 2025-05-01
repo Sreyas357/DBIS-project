@@ -1738,6 +1738,82 @@ app.get('/api/user/subscribed-threads', isAuthenticated, async (req, res) => {
   }
 });
 
+// Get all reviews for a specific book
+app.get('/books/:id/reviews', async (req, res) => {
+  try {
+    const bookId = req.params.id;
+    const query = `
+      SELECT r.review_id, r.rating, r.comment, r.updated_at, 
+             u.username, u.user_id
+      FROM user_book_reviews r
+      JOIN users u ON r.user_id = u.user_id
+      WHERE r.book_id = $1 AND r.comment IS NOT NULL AND r.comment != ''
+      ORDER BY r.updated_at DESC
+    `;
+    
+    const result = await pool.query(query, [bookId]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching book reviews:', error);
+    res.status(500).json({ error: 'Failed to fetch book reviews' });
+  }
+});
+
+// Update/add comment for a book
+app.post('/books/:id/comment', isAuthenticated, async (req, res) => {
+  try {
+    const bookId = req.params.id;
+    const userId = req.session.userId;
+    const { comment, rating } = req.body;
+    
+    // Check if user already has a review for this book
+    const checkQuery = `
+      SELECT review_id, rating FROM user_book_reviews 
+      WHERE user_id = $1 AND book_id = $2
+    `;
+    const checkResult = await pool.query(checkQuery, [userId, bookId]);
+    
+    if (checkResult.rows.length > 0) {
+      // Update existing review
+      const reviewId = checkResult.rows[0].review_id;
+      const currentRating = checkResult.rows[0].rating;
+      
+      await pool.query(
+        `UPDATE user_book_reviews 
+         SET comment = $1, updated_at = NOW(), rating = $2
+         WHERE review_id = $3 
+         RETURNING *`,
+        [comment, rating || currentRating, reviewId]
+      );
+    } else if (rating) {
+      // Create new review
+      await pool.query(
+        `INSERT INTO user_book_reviews (book_id, user_id, rating, comment, updated_at)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [bookId, userId, rating, comment]
+      );
+    } else {
+      return res.status(400).json({ error: 'Rating is required for a new review' });
+    }
+    
+    // Update book counts if needed
+    if (comment && comment.trim() !== '') {
+      await pool.query(
+        `UPDATE books SET num_reviews = 
+         (SELECT COUNT(*) FROM user_book_reviews 
+          WHERE book_id = $1 AND comment IS NOT NULL AND comment != '')
+         WHERE id = $1`,
+        [bookId]
+      );
+    }
+    
+    return res.status(200).json({ message: 'Comment saved successfully' });
+  } catch (error) {
+    console.error('Error saving comment:', error);
+    res.status(500).json({ error: 'Failed to save comment' });
+  }
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

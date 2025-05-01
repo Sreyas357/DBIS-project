@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { apiUrl } from "../config/config";
@@ -8,6 +8,7 @@ import { FaSearch, FaTimes, FaBook } from 'react-icons/fa'; // Import icons
 
 const Books = () => {
     const navigate = useNavigate();
+    const searchRef = useRef(null);
 
     const [books, setBooks] = useState([]);
     const [genres, setGenres] = useState([]);
@@ -20,6 +21,12 @@ const Books = () => {
     const [userReviews, setUserReviews] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [searchType, setSearchType] = useState("all"); // all, title, author
+    
+    // New state for search dropdown
+    const [dropdownResults, setDropdownResults] = useState([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    // New state to separate typing from search results
+    const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
 
     const fetchBooksData = async () => {
         try {
@@ -118,13 +125,7 @@ const Books = () => {
                 .filter(bg => genreIds.includes(bg.genre_id))
                 .map(bg => bg.book_id);
 
-            // const bookGenreCounts = filteredBookIds.reduce((acc, bookId) => {
-            //     acc[bookId] = (acc[bookId] || 0) + 1;
-            //     return acc;
-            // }, {});
-
             const MatchedBooks = books.filter(book =>
-                // bookGenreCounts[book.id] === selectedGenres.length
                 filteredBookIds.includes(book.id)
             );
 
@@ -133,6 +134,70 @@ const Books = () => {
             setFilteredBooks(books);
         }
     }, [selectedGenres, genres, bookGenres, books]);
+
+    // Function to update dropdown search results
+    const updateSearchDropdown = useCallback(() => {
+        if (searchQuery.trim() === "") {
+            // If search is empty, show top rated books
+            const topRatedBooks = [...books]
+                .sort((a, b) => b.avg_rating - a.avg_rating)
+                .slice(0, 5);
+            setDropdownResults(topRatedBooks);
+            return;
+        }
+
+        const query = searchQuery.toLowerCase();
+        let results;
+
+        switch (searchType) {
+            case "title":
+                results = books.filter(book =>
+                    book.title.toLowerCase().includes(query)
+                );
+                break;
+            case "author":
+                results = books.filter(book =>
+                    book.author.toLowerCase().includes(query)
+                );
+                break;
+            default: // "all"
+                results = books.filter(book =>
+                    book.title.toLowerCase().includes(query) ||
+                    book.author.toLowerCase().includes(query) ||
+                    (book.description && book.description.toLowerCase().includes(query))
+                );
+                break;
+        }
+
+        // If no matching results, show top rated books
+        if (results.length === 0) {
+            results = [...books]
+                .sort((a, b) => b.avg_rating - a.avg_rating)
+                .slice(0, 5);
+        } else {
+            // Limit to 5 results for dropdown
+            results = results.slice(0, 5);
+        }
+
+        setDropdownResults(results);
+    }, [books, searchQuery, searchType]);
+
+    // Update dropdown when search query changes
+    useEffect(() => {
+        updateSearchDropdown();
+    }, [searchQuery, updateSearchDropdown]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setShowDropdown(false);
+            }
+        };
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const sortBooks = useCallback((booksToSort) => {
         switch (sortOption) {
@@ -154,10 +219,10 @@ const Books = () => {
     const updateSearchResults = useCallback(() => {
         const baseBooks = sortBooks(filteredBooks);
 
-        if (searchQuery.trim() === "") {
+        if (appliedSearchQuery.trim() === "") {
             setSearchedBooks(baseBooks);
         } else {
-            const query = searchQuery.toLowerCase();
+            const query = appliedSearchQuery.toLowerCase();
             let results;
 
             switch (searchType) {
@@ -175,20 +240,28 @@ const Books = () => {
                     results = baseBooks.filter(book =>
                         book.title.toLowerCase().includes(query) ||
                         book.author.toLowerCase().includes(query) ||
-                        (book.description && book.description.toLowerCase().includes(query)) // if books.description exists then search for that query
+                        (book.description && book.description.toLowerCase().includes(query))
                     );
                     break;
             }
             setSearchedBooks(results);
         }
-    }, [filteredBooks, searchQuery, sortBooks, searchType]);
+    }, [filteredBooks, appliedSearchQuery, sortBooks, searchType]);
 
     useEffect(() => {
         updateSearchResults();
-    }, [filteredBooks, searchQuery, sortOption, searchType, updateSearchResults]);
+    }, [filteredBooks, appliedSearchQuery, sortOption, searchType, updateSearchResults]);
 
-    const handleSearch = () => { //
-        updateSearchResults();
+    const handleSearch = () => {
+        setShowDropdown(false);
+        // Apply the current search query to the main display
+        setAppliedSearchQuery(searchQuery);
+    };
+
+    // Navigate to book detail page when selecting from dropdown
+    const handleSelectBook = (bookId) => {
+        setShowDropdown(false);
+        navigate(`/books/${bookId}`);
     };
 
     const handleRateBook = async (bookId, newRating) => {
@@ -219,7 +292,7 @@ const Books = () => {
             setUserReviews(prev => ({
                 ...prev,
                 [bookId]: newRating > 0
-                    ? { rating: newRating, comment: null } // comment
+                    ? { rating: newRating, comment: null }
                     : undefined
             }));
         } catch (error) {
@@ -266,7 +339,7 @@ const Books = () => {
                 <div className="books-container">
                     <div className="controls-container">
                         <div className="search-container">
-                            <div className="search-input-wrapper">
+                            <div className="search-input-wrapper" ref={searchRef}>
                                 <FaSearch className="search-icon" />
                                 <input
                                     type="text"
@@ -274,18 +347,71 @@ const Books = () => {
                                     className="search-bar"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                    onFocus={() => setShowDropdown(true)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleSearch();
+                                            setShowDropdown(false);
+                                        }
+                                    }}
                                 />
                                 {searchQuery && (
                                     <FaTimes 
                                         className="clear-search-icon" 
                                         onClick={() => {
                                             setSearchQuery("");
-                                            handleSearch();
+                                            setAppliedSearchQuery("");
+                                            setShowDropdown(false);
                                         }}
                                     />
                                 )}
+                                
+                                {/* Search Dropdown */}
+                                {showDropdown && (
+                                    <div className="search-dropdown">
+                                        <div className="dropdown-header">
+                                            {searchQuery.trim() === "" ? "Top Rated Books" : "Search Results"}
+                                        </div>
+                                        {dropdownResults.length > 0 ? (
+                                            dropdownResults.map(book => (
+                                                <div 
+                                                    key={book.id} 
+                                                    className="dropdown-item"
+                                                    onClick={() => handleSelectBook(book.id)}
+                                                >
+                                                    <div className="dropdown-item-cover">
+                                                        {book.coverurl ? (
+                                                            <img 
+                                                                src={book.coverurl} 
+                                                                alt="" 
+                                                                onError={handleImageError}
+                                                            />
+                                                        ) : (
+                                                            <FaBook />
+                                                        )}
+                                                    </div>
+                                                    <div className="dropdown-item-info">
+                                                        <div className="dropdown-item-title">{book.title}</div>
+                                                        <div className="dropdown-item-author">by {book.author}</div>
+                                                        <div className="dropdown-item-rating">
+                                                            <StarRating 
+                                                                rating={book.avg_rating || 0} 
+                                                                interactive={false} 
+                                                            />
+                                                            <span>{book.avg_rating} ({book.num_ratings})</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="dropdown-no-results">
+                                                No matching books found
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
+
                             <div className="search-options">
                                 <select
                                     className="search-type-select"

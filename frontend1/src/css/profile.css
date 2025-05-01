@@ -4,13 +4,13 @@
     display: flex;
     max-width: 1100px;
     margin: 40px auto;
-    gap: 40px;
+    gap: 25px; /* Slightly increased gap from 20px */
     padding: 20px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .profile-content {
-    flex: 3;
+    flex: 2.7; /* Adjusted from 2.5 to give slightly less space to search */
     background: #fff;
     padding: 25px;
     border-radius: 12px;
@@ -81,6 +81,22 @@
     color: #333;
 }
 
+.book-title.clickable {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #0066cc;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: color 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.book-title.clickable:hover {
+    color: #004080;
+    text-decoration: underline;
+}
+
 .book-author {
     font-size: 0.95rem;
     color: #666;
@@ -106,18 +122,7 @@
 }
 
 .view-book-btn {
-    margin-top: 10px;
-    background-color: #007bff;
-    color: white;
-    padding: 6px 12px;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.view-book-btn:hover {
-    background-color: #0056b3;
+    display: none; /* Hide the button since we're not using it anymore */
 }
 
 .no-books {
@@ -127,7 +132,7 @@
 
 /* Right side search section */
 .search-section {
-    flex: 1;
+    flex: 1.3; /* Reduced from 1.5 to make it slightly smaller */
     background-color: #fefefe;
     padding: 20px;
     border-radius: 12px;
@@ -136,53 +141,93 @@
     height: fit-content;
 }
 
+/* Fixed search box and button styles to prevent overlap */
 .search-box {
+    position: relative;
+    width: 100%;
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    align-items: center;
 }
 
 .search-box input[type="text"] {
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 0.95rem;
     width: 100%;
+    padding: 12px 16px;
+    padding-right: 60px; /* Added extra padding to prevent text overlapping with button */
+    border: 1px solid #dfe1e5;
+    border-radius: 24px;
+    font-size: 14px; /* Slightly smaller font to fit placeholder better */
+    outline: none;
+    box-shadow: 0 1px 3px rgba(32, 33, 36, 0.1);
+    transition: box-shadow 0.2s;
+    min-width: 220px; /* Reduced from 250px */
+    max-width: 300px; /* Add a maximum width */
+    margin: 0 auto; /* Center the input if container is wider */
+}
+
+.search-box input[type="text"]:focus {
+    box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
+    border-color: rgba(223, 225, 229, 0);
 }
 
 .search-box button {
-    background-color: #28a745;
+    position: absolute;
+    right: 5px; /* Moved slightly inward from the edge */
+    top: 50%;
+    transform: translateY(-50%);
+    height: 36px; /* Fixed height rather than 100% */
+    width: 50px; /* Fixed width for the button */
+    padding: 0;
+    background-color: #4a6fa5;
     color: white;
-    padding: 8px 12px;
     border: none;
-    border-radius: 8px;
+    border-radius: 18px; /* Make it perfectly round */
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .search-box button:hover {
-    background-color: #1e7e34;
+    background-color: #3a5a80;
+}
+
+.search-box button:before {
+    content: "🔍";
+    font-size: 16px;
 }
 
 .search-dropdown {
-    margin-top: 8px;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: absolute;
+    top: calc(100% + 5px); /* Added 5px gap between input and dropdown */
+    left: 0;
+    width: 100%;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(32, 33, 36, 0.28);
+    padding: 8px 0;
+    z-index: 1000;
     overflow: hidden;
-    z-index: 10;
-    position: relative;
 }
 
 .search-result-item {
-    padding: 10px 12px;
+    padding: 8px 16px;
     cursor: pointer;
-    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s;
 }
 
-.search-result-item:hover {
-    background-color: #f0f0f0;
+.search-result-item:hover,
+.search-result-item.selected {
+    background-color: #f1f3f4;
+}
+
+.search-result-item:before {
+    content: "🔍";
+    margin-right: 12px;
+    color: #9aa0a6;
+    font-size: 14px;
 }
 
 /* States */
@@ -194,4 +239,3 @@
     font-size: 1.1rem;
     margin-top: 50px;
 }
-    

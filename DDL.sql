@@ -62,7 +62,7 @@ CREATE TABLE user_book_reviews (
     review_id SERIAL PRIMARY KEY,
     book_id INTEGER REFERENCES books(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
-    rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    rating INTEGER NOT NULL CHECK (rating BETWEEN 0 AND 5),
     comment TEXT NULL,
     updated_at TIMESTAMP DEFAULT NOW(),
     UNIQUE (book_id, user_id)  -- Ensures one review per user per book

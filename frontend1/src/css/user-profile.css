@@ -111,6 +111,22 @@
     color: #333;
 }
 
+.book-title.clickable {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #0066cc;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: color 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.book-title.clickable:hover {
+    color: #004080;
+    text-decoration: underline;
+}
+
 .book-author {
     font-size: 0.95rem;
     color: #666;
@@ -143,4 +159,3 @@
     font-size: 1.1rem;
     margin-top: 40px;
 }
- 
