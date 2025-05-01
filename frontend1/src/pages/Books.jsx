@@ -307,6 +307,181 @@ const Books = () => {
         e.target.src = '/default-book-cover.jpg'; // Default image path
     };
 
+    // Corrected onlineSearch function
+    const onlineSearch = async (bookName) => {
+        try {
+            setIsLoading(true);
+            const maxResults = 3;
+            const encodedBookName = encodeURIComponent(bookName);
+
+            const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodedBookName}&maxResults=${maxResults}`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+
+            if (!data.items || data.items.length === 0) {
+                alert(`No books found with the name "${bookName}"`);
+                setIsLoading(false);
+                return;
+            }
+
+            // Track successful additions and store new books data
+            let addedBooks = 0;
+            let attemptedBooks = 0;
+            let failedBooks = [];
+            const newBooks = [];
+            const newGenres = [];
+            const newBookGenres = [];
+            
+            // Process each book
+            for (const item of data.items) {
+                const volumeInfo = item.volumeInfo;
+                
+                if (!volumeInfo) continue;
+                
+                attemptedBooks++;
+                
+                try {
+                    // Ensure property names match what the backend expects
+                    const res = await fetch(`${apiUrl}/api/add-book`, {
+                        method: "POST",
+                        credentials: "include",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            title: volumeInfo.title || "Unknown Title",
+                            author: volumeInfo.authors?.[0] || "Unknown",
+                            description: volumeInfo.description || "No description available",
+                            coverurl: volumeInfo.imageLinks?.thumbnail || null, // lowercase url
+                            publishedyear: volumeInfo.publishedDate ? volumeInfo.publishedDate.substring(0, 4) : "Unknown", // lowercase year
+                            pagecount: volumeInfo.pageCount || null, // lowercase count
+                            publisher: volumeInfo.publisher || "Unknown",
+                            previewlink: volumeInfo.previewLink || null, // lowercase link
+                            genres: volumeInfo.categories || []
+                        })
+                    });
+
+                    if (res.ok) {
+                        const responseData = await res.json();
+                        
+                        // Add the new book to our collection
+                        newBooks.push(responseData.book);
+                        
+                        // Add any new genres
+                        if (responseData.newGenres && responseData.newGenres.length > 0) {
+                            newGenres.push(...responseData.newGenres);
+                        }
+                        
+                        // Add new book-genre relations
+                        if (responseData.newBookGenreRelations && responseData.newBookGenreRelations.length > 0) {
+                            newBookGenres.push(...responseData.newBookGenreRelations);
+                        }
+                        
+                        addedBooks++;
+                    } else {
+                        const errorData = await res.json();
+                        failedBooks.push(volumeInfo.title || "Unknown Title");
+                        console.error(`Failed to add book "${volumeInfo.title}": ${errorData.error}`);
+                    }
+                } catch (err) {
+                    failedBooks.push(volumeInfo.title || "Unknown Title");
+                    console.error(`Error processing book "${volumeInfo.title}":`, err);
+                }
+            }
+
+            // Update application state with the new data if any books were added
+            if (addedBooks > 0) {
+                // Update books state
+                setBooks(prevBooks => [...prevBooks, ...newBooks]);
+                
+                // Update genres state
+                setGenres(prevGenres => {
+                    // Filter out duplicates based on ID
+                    const existingIds = new Set(prevGenres.map(g => g.id));
+                    const uniqueNewGenres = newGenres.filter(g => !existingIds.has(g.id));
+                    return [...prevGenres, ...uniqueNewGenres];
+                });
+                
+                // Update bookGenres state
+                setBookGenres(prevRelations => [...prevRelations, ...newBookGenres]);
+                
+                // Update filtered and searched books based on current filters and search
+                const updatedBooks = [...books, ...newBooks];
+                
+                // Apply current genre filters
+                let filtered;
+                if (selectedGenres.length > 0) {
+                    const genreIds = [...genres, ...newGenres]
+                        .filter(g => selectedGenres.includes(g.name))
+                        .map(g => g.id);
+
+                    const filteredBookIds = [...bookGenres, ...newBookGenres]
+                        .filter(bg => genreIds.includes(bg.genre_id))
+                        .map(bg => bg.book_id);
+
+                    filtered = updatedBooks.filter(book =>
+                        filteredBookIds.includes(book.id)
+                    );
+                } else {
+                    filtered = updatedBooks;
+                }
+                
+                setFilteredBooks(filtered);
+                
+                // Apply current search if any
+                if (appliedSearchQuery.trim() === "") {
+                    setSearchedBooks(sortBooks(filtered));
+                } else {
+                    const query = appliedSearchQuery.toLowerCase();
+                    let results;
+
+                    switch (searchType) {
+                        case "title":
+                            results = filtered.filter(book =>
+                                book.title.toLowerCase().includes(query)
+                            );
+                            break;
+                        case "author":
+                            results = filtered.filter(book =>
+                                book.author.toLowerCase().includes(query)
+                            );
+                            break;
+                        default: // "all"
+                            results = filtered.filter(book =>
+                                book.title.toLowerCase().includes(query) ||
+                                book.author.toLowerCase().includes(query) ||
+                                (book.description && book.description.toLowerCase().includes(query))
+                            );
+                            break;
+                    }
+                    setSearchedBooks(sortBooks(results));
+                }
+                
+                // Show appropriate message
+                const plural = addedBooks === 1 ? '' : 's';
+                if (addedBooks < attemptedBooks) {
+                    alert(`Added ${addedBooks} book${plural} to the library. ${attemptedBooks - addedBooks} could not be added.`);
+                } else {
+                    alert(`Successfully added ${addedBooks} book${plural} to the library.`);
+                }
+            } else {
+                if (failedBooks.length > 0) {
+                    alert(`Failed to add any books. Please try again.`);
+                } else {
+                    alert(`No new books were found to add.`);
+                }
+            }
+            
+        } catch (error) {
+            console.error("Error searching books online:", error);
+            alert("Failed to search for books online. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <>
             <Navbar />
@@ -513,15 +688,23 @@ const Books = () => {
                         <div className="no-results">
                             <FaBook className="no-results-icon" />
                             <p className="no-books-message">No books found matching your criteria.</p>
-                            <button 
-                                className="reset-search-button"
-                                onClick={() => {
-                                    setSearchQuery("");
-                                    setSelectedGenres([]);
-                                }}
-                            >
-                                Reset Search
-                            </button>
+                            <div className="no-results-actions">
+                                <button 
+                                    className="reset-search-button"
+                                    onClick={() => {
+                                        setSearchQuery("");
+                                        setSelectedGenres([]);
+                                    }}
+                                >
+                                    Reset Search
+                                </button>
+                                <button 
+                                    className="online-search-button"
+                                    onClick={() => onlineSearch(searchQuery)}
+                                >
+                                    Search Online
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>

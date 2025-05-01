@@ -1814,6 +1814,142 @@ app.post('/books/:id/comment', isAuthenticated, async (req, res) => {
   }
 });
 
+// Add a new book with improved validation and error handling
+app.post('/api/add-book', isAuthenticated, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const {
+      title,
+      author,
+      description,
+      coverurl,
+      publishedyear,
+      pagecount,
+      publisher,
+      previewlink,
+      genres // Array of genre names
+    } = req.body;
+
+    console.log('Received book data:', {
+      title, author, publishedyear, genres: genres?.length || 0
+    });
+
+    // Validate required fields
+    if (!title || !author) {
+      return res.status(400).json({ error: 'Title and author are required' });
+    }
+
+    // Validate publishedyear format if provided
+    if (publishedyear && publishedyear !== 'Unknown' && !/^\d{4}$/.test(publishedyear)) {
+      return res.status(400).json({ error: 'Published year must be a 4-digit number or "Unknown"' });
+    }
+    
+    // Check if book already exists to avoid duplicates
+    const existingBook = await client.query(
+      'SELECT id FROM books WHERE title = $1 AND author = $2',
+      [title, author]
+    );
+    
+    if (existingBook.rows.length > 0) {
+      return res.status(400).json({ 
+        error: 'Book already exists',
+        bookId: existingBook.rows[0].id
+      });
+    }
+
+    await client.query('BEGIN');
+
+    // Insert the book
+    const insertBookQuery = `
+      INSERT INTO books 
+      (title, author, description, coverurl, publishedyear, pagecount, publisher, previewlink, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      RETURNING *
+    `;
+
+    const bookResult = await client.query(insertBookQuery, [
+      title,
+      author,
+      description || null,
+      coverurl || null,
+      publishedyear || 'Unknown',
+      pagecount || null,
+      publisher || null,
+      previewlink || null
+    ]);
+
+    const newBook = bookResult.rows[0];
+    const addedGenres = [];
+    const bookGenreRelations = [];
+
+    // Handle genres if provided
+    if (genres && Array.isArray(genres) && genres.length > 0) {
+      // Process each genre
+      for (const genre of genres) {
+        // Trim and normalize the genre name
+        const normalizedGenreName = genre.trim();
+        if (!normalizedGenreName) continue;
+
+        // Check if the genre already exists
+        const genreCheckQuery = 'SELECT id, name FROM genres WHERE name ILIKE $1';
+        const genreResult = await client.query(genreCheckQuery, [normalizedGenreName]);
+
+        let genreId;
+        let existingGenreName;
+        
+        if (genreResult.rows.length > 0) {
+          // Genre exists, use its ID
+          genreId = genreResult.rows[0].id;
+          existingGenreName = genreResult.rows[0].name;
+        } else {
+          // Genre doesn't exist, create it
+          const createGenreQuery = 'INSERT INTO genres (name) VALUES ($1) RETURNING id, name';
+          const newGenreResult = await client.query(createGenreQuery, [normalizedGenreName]);
+          genreId = newGenreResult.rows[0].id;
+          existingGenreName = newGenreResult.rows[0].name;
+          
+          // Add to the new genres list
+          addedGenres.push({
+            id: genreId,
+            name: existingGenreName,
+            created_at: new Date().toISOString()
+          });
+        }
+
+        // Link the book to this genre
+        await client.query(
+          'INSERT INTO book_genres (book_id, genre_id) VALUES ($1, $2)',
+          [newBook.id, genreId]
+        );
+        
+        // Add to book-genre relations list
+        bookGenreRelations.push({
+          book_id: newBook.id,
+          genre_id: genreId
+        });
+      }
+    }
+
+    await client.query('COMMIT');
+
+    console.log(`Successfully added book: "${title}" by ${author}`);
+
+    // Return the created book with all needed data
+    res.status(201).json({
+      book: newBook,
+      newGenres: addedGenres,
+      newBookGenreRelations: bookGenreRelations
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error adding book:', error);
+    res.status(500).json({ error: 'Failed to add book', details: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
