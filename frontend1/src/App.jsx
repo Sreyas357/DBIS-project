@@ -4,6 +4,7 @@ import Books from './pages/Books';
 import BookDetails from './pages/BookDetails';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
 // Import other pages as needed
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <Route path="/books/:id" element={<BookDetails />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         {/* Add other routes as needed */}
       </Routes>
     </BrowserRouter>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router-dom";
 import { apiUrl } from "../config/config";
 import "../css/login.css"; // Import CSS file
 
@@ -96,7 +96,10 @@ return (
         <button type="submit">Login</button>
       </form>
       <p className="signup-link">
-        Don't have an account? <a href="/signup">Sign up here</a>
+        Don't have an account? <Link to="/signup" className="signup-link-text">Sign up here</Link>
+      </p>
+      <p className="forgot-password-link">
+        <Link to="/forgot-password" className="forgot-password-link-text">Forgot Password?</Link>
       </p>
     </div>
   </div>

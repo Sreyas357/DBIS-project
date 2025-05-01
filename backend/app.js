@@ -4,6 +4,8 @@ const session = require("express-session");
 const bcrypt = require("bcrypt");
 const cors = require("cors");
 const { Pool } = require("pg");
+const nodemailer = require('nodemailer');
+
 const app = express();
 const port = 4000;
 
@@ -40,6 +42,32 @@ app.use(
     cookie: { httpOnly: true, maxAge: 1000 * 60 * 60 * 24 }, // 1 day
   })
 );
+
+// Email configuration
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'madhav.vutkoori1@gmail.com', // Replace with your Gmail address
+        pass: 'qqnj lkor xwch xnls' // Replace with the App Password you generated
+    }
+});
+
+// Verify transporter on startup
+transporter.verify(function(error, success) {
+    if (error) {
+        console.error('Email transporter verification failed:', error);
+    } else {
+        console.log('Email transporter is ready to send messages');
+    }
+});
+
+// Store OTPs temporarily (in production, use Redis or similar)
+const otpStore = new Map();
+
+// Generate OTP
+function generateOTP() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
 // Authentication middleware
 function isAuthenticated(req, res, next) {
@@ -1948,6 +1976,124 @@ app.post('/api/add-book', isAuthenticated, async (req, res) => {
   } finally {
     client.release();
   }
+});
+
+// Forgot Password - Send OTP
+app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        console.log('Forgot password request for email:', email);
+
+        // Check if email exists in database
+        const userResult = await pool.query(
+            'SELECT user_id FROM users WHERE email = $1',
+            [email]
+        );
+
+        if (userResult.rows.length === 0) {
+            console.log('Email not found in database:', email);
+            return res.status(404).json({ message: 'Email not found' });
+        }
+
+        // Generate OTP
+        const otp = generateOTP();
+        const otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+        console.log('Generated OTP:', otp);
+
+        // Store OTP
+        otpStore.set(email, {
+            otp,
+            expiry: otpExpiry
+        });
+        console.log('OTP stored for email:', email);
+
+        // Send email
+        const mailOptions = {
+            from: '"BookSocial Password Reset" <your.email@gmail.com>', // Replace with your Gmail address
+            to: email,
+            subject: 'Password Reset OTP',
+            html: `
+                <h1>Password Reset Request</h1>
+                <p>Your OTP for password reset is: <strong>${otp}</strong></p>
+                <p>This OTP will expire in 10 minutes.</p>
+                <p>If you didn't request this, please ignore this email.</p>
+            `
+        };
+
+        console.log('Attempting to send email...');
+        await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully!');
+        
+        res.json({ 
+            message: 'OTP sent successfully to your email address'
+        });
+    } catch (err) {
+        console.error('Detailed error in forgot password:', {
+            message: err.message,
+            stack: err.stack,
+            code: err.code
+        });
+        res.status(500).json({ 
+            message: 'Failed to send OTP',
+            error: err.message 
+        });
+    }
+});
+
+// Verify OTP
+app.post('/api/auth/verify-otp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        const storedData = otpStore.get(email);
+        if (!storedData) {
+            return res.status(400).json({ message: 'OTP expired or invalid' });
+        }
+
+        if (Date.now() > storedData.expiry) {
+            otpStore.delete(email);
+            return res.status(400).json({ message: 'OTP expired' });
+        }
+
+        if (storedData.otp !== otp) {
+            return res.status(400).json({ message: 'Invalid OTP' });
+        }
+
+        res.json({ message: 'OTP verified successfully' });
+    } catch (err) {
+        console.error('Error in OTP verification:', err);
+        res.status(500).json({ message: 'Failed to verify OTP' });
+    }
+});
+
+// Reset Password
+app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+
+        // Verify OTP again
+        const storedData = otpStore.get(email);
+        if (!storedData || storedData.otp !== otp || Date.now() > storedData.expiry) {
+            return res.status(400).json({ message: 'Invalid or expired OTP' });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password in database
+        await pool.query(
+            'UPDATE users SET password_hash = $1 WHERE email = $2',
+            [hashedPassword, email]
+        );
+
+        // Clear OTP
+        otpStore.delete(email);
+
+        res.json({ message: 'Password reset successful' });
+    } catch (err) {
+        console.error('Error in password reset:', err);
+        res.status(500).json({ message: 'Failed to reset password' });
+    }
 });
 
 // Start the server

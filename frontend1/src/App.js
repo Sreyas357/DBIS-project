@@ -12,6 +12,7 @@ import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
 import Messages from "./pages/Messages";
 import Temp from "./pages/Temp";
+import ForgotPassword from "./pages/ForgotPassword";
 // Import Thread pages
 import Threads from "./pages/Threads";
 import ThreadsByCategory from "./pages/ThreadsByCategory";
@@ -44,6 +45,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/books" element={<Books />} />
