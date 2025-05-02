@@ -1,5 +1,5 @@
 // App.js
-import { Routes, Route, useLocation } from "react-router-dom"; 
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom"; 
 import Signup from "./pages/Signup";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -19,6 +19,7 @@ import ThreadsByCategory from "./pages/ThreadsByCategory";
 import ThreadDetail from "./pages/ThreadDetail";
 import CreateThread from "./pages/CreateThread";
 import SubscribedThreads from "./pages/SubscribedThreads";
+import VerifyEmail from "./pages/VerifyEmail";
 
 import { ThemeProvider } from "./components/ThemeContext";
 import ThemeToggle from "./components/ThemeToggle";
@@ -41,38 +42,39 @@ function App() {
   
   return (
     <ThemeProvider>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/books" element={<Books />} />
-        <Route path="/books/:id" element={<BookDetails />} />
-        <Route path="/tvshows" element={<TVShows />} />
-        <Route path="/user/:username" element={<UserProfile />} />
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/temp" element={<Temp />} />
-        <Route path="/messages/:userId" element={<Messages />} />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/books" element={<Books />} />
+          <Route path="/books/:id" element={<BookDetails />} />
+          <Route path="/tvshows" element={<TVShows />} />
+          <Route path="/user/:username" element={<UserProfile />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/temp" element={<Temp />} />
+          <Route path="/messages/:userId" element={<Messages />} />
+          
+          {/* Thread Routes */}
+          <Route path="/threads" element={<Threads />} />
+          <Route path="/threads/category/:categoryId" element={<ThreadsByCategory />} />
+          <Route path="/threads/subscribed" element={<SubscribedThreads />} />
+          <Route path="/threads/create" element={<CreateThread />} />
+          <Route path="/threads/:threadId" element={<ThreadDetail />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+         
+          <Route path="*" element={<NotFound />} />
+        </Routes>
         
-        {/* Thread Routes */}
-        <Route path="/threads" element={<Threads />} />
-        <Route path="/threads/category/:categoryId" element={<ThreadsByCategory />} />
-        <Route path="/threads/subscribed" element={<SubscribedThreads />} />
-        <Route path="/threads/create" element={<CreateThread />} />
-        <Route path="/threads/:threadId" element={<ThreadDetail />} />
-       
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      
-      {showHelp && (
-        <div className="theme-help-message">
-          Click the button in the bottom right to toggle dark/light mode
-        </div>
-      )}
-      
-      <ThemeToggle />
+        {showHelp && (
+          <div className="theme-help-message">
+            Click the button in the bottom right to toggle dark/light mode
+          </div>
+        )}
+        
+        <ThemeToggle />
     </ThemeProvider>
   );
 }

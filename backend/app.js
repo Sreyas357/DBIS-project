@@ -2096,6 +2096,66 @@ app.post('/api/auth/reset-password', async (req, res) => {
     }
 });
 
+// Send verification email for signup
+app.post('/api/auth/send-verification-email', async (req, res) => {
+    try {
+        const { email, username } = req.body;
+        
+        // Check if email already exists
+        const emailCheckQuery = 'SELECT * FROM users WHERE email = $1';
+        const emailCheckResult = await pool.query(emailCheckQuery, [email]);
+
+        if (emailCheckResult.rows.length > 0) {
+            return res.status(400).json({ message: "Email is already registered." });
+        }
+
+        // Check if username already exists
+        const usernameCheckQuery = 'SELECT * FROM users WHERE username = $1';
+        const usernameCheckResult = await pool.query(usernameCheckQuery, [username]);
+
+        if (usernameCheckResult.rows.length > 0) {
+            return res.status(400).json({ message: "Username is already taken." });
+        }
+
+        // Generate OTP
+        const otp = generateOTP();
+        const otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+
+        // Store OTP
+        otpStore.set(email, {
+            otp,
+            expiry: otpExpiry
+        });
+
+        // Send email
+        const mailOptions = {
+            from: '"BookSocial Account Verification" <madhav.vutkoori1@gmail.com>',
+            to: email,
+            subject: 'Verify Your Email Address',
+            html: `
+                <h1>Welcome to BookSocial!</h1>
+                <p>Hi ${username},</p>
+                <p>Thank you for signing up. To complete your registration, please enter the verification code below:</p>
+                <h2 style="background-color: #f2f2f2; padding: 10px; text-align: center; letter-spacing: 5px;">${otp}</h2>
+                <p>This code will expire in 10 minutes.</p>
+                <p>If you didn't request this, please ignore this email.</p>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        
+        res.json({ 
+            message: 'Verification code sent successfully to your email address'
+        });
+    } catch (err) {
+        console.error('Error in send-verification-email:', err);
+        res.status(500).json({ 
+            message: 'Failed to send verification email',
+            error: err.message 
+        });
+    }
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
