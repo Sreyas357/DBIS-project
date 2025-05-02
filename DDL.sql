@@ -5,6 +5,9 @@ DROP TABLE IF EXISTS books CASCADE;
 DROP TABLE IF EXISTS genres CASCADE;
 DROP TABLE IF EXISTS follows CASCADE;
 DROP TABLE IF EXISTS Users CASCADE;
+DROP TABLE IF EXISTS group_messages CASCADE;
+DROP TABLE IF EXISTS group_members CASCADE;
+DROP TABLE IF EXISTS groups CASCADE;
 
 -- user info - username, email, password
 CREATE TABLE Users (
@@ -184,3 +187,69 @@ INSERT INTO thread_categories (name, description, color) VALUES
 ('Reading Challenges', 'Join reading challenges and track your progress', '#D81B60'),
 ('General', 'General discussions about reading and books', '#546E7A');
 
+-- Create simplified groups table
+CREATE TABLE groups (
+    group_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    owner_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    bio TEXT,
+    invite_only BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(name)
+);
+
+-- Create simplified group members table
+CREATE TABLE group_members (
+    group_id INTEGER NOT NULL REFERENCES groups(group_id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_admin BOOLEAN DEFAULT false,
+    PRIMARY KEY (group_id, user_id)
+);
+
+-- Create simplified group messages table
+CREATE TABLE group_messages (
+    message_id SERIAL PRIMARY KEY,
+    group_id INTEGER NOT NULL REFERENCES groups(group_id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+-- Drop tables if they exist
+DROP TABLE IF EXISTS notifications CASCADE;
+DROP TABLE IF EXISTS group_join_requests CASCADE;
+
+-- Create notifications table
+CREATE TABLE notifications (
+    notification_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL,
+    content TEXT NOT NULL,
+    related_id INTEGER, -- Can store group_id, request_id, etc.
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create group join requests table
+CREATE TABLE group_join_requests (
+    request_id SERIAL PRIMARY KEY,
+    group_id INTEGER NOT NULL REFERENCES groups(group_id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending, accepted, rejected
+    message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(group_id, user_id, status)
+);
+
+-- Create index for faster notification lookups
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_notifications_is_read ON notifications(is_read);
+
+-- Create index for faster join request lookups
+CREATE INDEX idx_join_requests_group_id ON group_join_requests(group_id);
+CREATE INDEX idx_join_requests_user_id ON group_join_requests(user_id);
+CREATE INDEX idx_join_requests_status ON group_join_requests(status); 

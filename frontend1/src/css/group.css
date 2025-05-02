@@ -1,0 +1,704 @@
+/* Styling for group cards */
+.group-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.group-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.group-card.dark-mode {
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.group-info {
+  flex: 1;
+}
+
+.group-name {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.group-bio {
+  margin: 0 0 0.75rem;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  max-height: 2.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.dark-mode .group-bio {
+  color: #aaa;
+}
+
+.group-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #777;
+}
+
+.dark-mode .group-meta {
+  color: #999;
+}
+
+.group-meta a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.dark-mode .group-meta a {
+  color: #4d9eff;
+}
+
+.group-meta a:hover {
+  text-decoration: underline;
+}
+
+.group-action-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.group-action-btn.join {
+  background-color: #4285f4;
+  color: white;
+}
+
+.group-action-btn.join:hover {
+  background-color: #2b6ed9;
+}
+
+.group-action-btn.leave {
+  background-color: #f1f1f1;
+  color: #333;
+}
+
+.group-action-btn.leave:hover {
+  background-color: #e0e0e0;
+}
+
+.dark-mode .group-action-btn.leave {
+  background-color: #444;
+  color: #e0e0e0;
+}
+
+.dark-mode .group-action-btn.leave:hover {
+  background-color: #555;
+}
+
+.group-action-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.group-action-btn.request {
+  background-color: #f39c12;
+  color: white;
+}
+
+.group-action-btn.request:hover {
+  background-color: #e67e22;
+}
+
+.group-action-btn.request.requested {
+  background-color: #95a5a6;
+  cursor: default;
+}
+
+/* List of groups styling */
+.groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+/* Empty state */
+.groups-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.dark-mode .groups-empty {
+  background-color: #2a2a2a;
+  color: #aaa;
+}
+
+/* Groups page styling */
+.groups-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.groups-page.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.groups-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.groups-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.create-group-btn {
+  padding: 0.5rem 1rem;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.create-group-btn:hover {
+  background-color: #2b6ed9;
+}
+
+/* View toggle buttons */
+.view-toggle {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-radius: 4px;
+  overflow: hidden;
+  width: fit-content;
+  border: 1px solid #ddd;
+}
+
+.dark-mode .view-toggle {
+  border-color: #444;
+}
+
+.view-toggle-btn {
+  padding: 0.5rem 1.5rem;
+  background-color: #f8f8f8;
+  color: #333;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.dark-mode .view-toggle-btn {
+  background-color: #333;
+  color: #e0e0e0;
+}
+
+.view-toggle-btn.active {
+  background-color: #4285f4;
+  color: white;
+}
+
+.view-toggle-btn:hover:not(.active) {
+  background-color: #e0e0e0;
+}
+
+.dark-mode .view-toggle-btn:hover:not(.active) {
+  background-color: #555;
+}
+
+.search-container {
+  margin-bottom: 2rem;
+}
+
+/* Authentication message */
+.auth-message {
+  padding: 2rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 2rem;
+  border: 1px solid #eee;
+}
+
+.dark-mode .auth-message {
+  background-color: #2a2a2a;
+  border-color: #444;
+}
+
+.auth-message p {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: #555;
+}
+
+.dark-mode .auth-message p {
+  color: #ccc;
+}
+
+.login-btn {
+  padding: 0.5rem 1.5rem;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.login-btn:hover {
+  background-color: #2b6ed9;
+}
+
+.search-container form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.dark-mode .search-input {
+  background-color: #333;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+.search-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.search-btn:hover {
+  background-color: #2b6ed9;
+}
+
+.error-message {
+  padding: 1rem;
+  margin: 1rem 0;
+  background-color: #ffebee;
+  color: #c62828;
+  border-radius: 4px;
+  border-left: 4px solid #c62828;
+}
+
+.dark-mode .error-message {
+  background-color: rgba(198, 40, 40, 0.2);
+  color: #ff8a80;
+}
+
+/* Group Details Page */
+.group-details-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.group-details-page.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+.group-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.group-details-header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.join-group-btn, .edit-group-btn {
+  padding: 0.5rem 1rem;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.join-group-btn:hover, .edit-group-btn:hover {
+  background-color: #2b6ed9;
+}
+
+.leave-group-btn {
+  padding: 0.5rem 1rem;
+  background-color: #f1f1f1;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.leave-group-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.dark-mode .leave-group-btn {
+  background-color: #444;
+  color: #e0e0e0;
+}
+
+.dark-mode .leave-group-btn:hover {
+  background-color: #555;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  background-color: #f1f1f1;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.back-button:hover {
+  background-color: #e0e0e0;
+}
+
+.dark-mode .back-button {
+  background-color: #444;
+  color: #e0e0e0;
+}
+
+.dark-mode .back-button:hover {
+  background-color: #555;
+}
+
+.group-details-info {
+  margin-bottom: 2rem;
+}
+
+.group-details-info .group-bio {
+  font-size: 1rem;
+  max-height: none;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+  -webkit-line-clamp: initial;
+}
+
+.group-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .group-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+.group-members-section, .group-messages-section {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.dark-mode .group-members-section, .dark-mode .group-messages-section {
+  background-color: #2a2a2a;
+}
+
+.group-members-section h2, .group-messages-section h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.dark-mode .member-item {
+  border-bottom-color: #444;
+}
+
+.admin-badge {
+  background-color: #4285f4;
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+}
+
+.messages-list {
+  margin-bottom: 1.5rem;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+.dark-mode .messages-list {
+  border-color: #444;
+}
+
+.message-item {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.dark-mode .message-item {
+  border-bottom-color: #444;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.message-time {
+  color: #777;
+  font-size: 0.8rem;
+}
+
+.dark-mode .message-time {
+  color: #999;
+}
+
+.message-content {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.no-messages {
+  text-align: center;
+  color: #777;
+  padding: 2rem 0;
+}
+
+.dark-mode .no-messages {
+  color: #999;
+}
+
+.message-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.message-input {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.dark-mode .message-input {
+  background-color: #333;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+.send-message-btn {
+  padding: 0.75rem;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.send-message-btn:hover {
+  background-color: #2b6ed9;
+}
+
+.send-message-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Create Group Form */
+.create-group-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.create-group-page.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  margin: 0;
+}
+
+.form-container {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.dark-mode .form-container {
+  background-color: #2a2a2a;
+}
+
+.create-group-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-weight: 600;
+}
+
+.form-control {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.dark-mode .form-control {
+  background-color: #333;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.cancel-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: #f1f1f1;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.dark-mode .cancel-btn {
+  background-color: #444;
+  color: #e0e0e0;
+}
+
+.dark-mode .cancel-btn:hover {
+  background-color: #555;
+}
+
+.submit-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submit-btn:hover {
+  background-color: #2b6ed9;
+}
+
+.submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+} 
