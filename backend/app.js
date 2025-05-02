@@ -2156,6 +2156,816 @@ app.post('/api/auth/send-verification-email', async (req, res) => {
     }
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ==== GROUP SYSTEM APIs ====
+
+// Get all public groups
+app.get('/api/groups', async (req, res) => {
+    try {
+        const query = `
+            SELECT g.*, 
+                   u.username as owner_username,
+                   COUNT(DISTINCT gm.user_id) as member_count
+            FROM groups g
+            JOIN users u ON g.owner_id = u.user_id
+            LEFT JOIN group_members gm ON g.group_id = gm.group_id
+            GROUP BY g.group_id, u.username
+            ORDER BY g.created_at DESC
+        `;
+        
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching groups:', err);
+        res.status(500).json({ error: 'Failed to fetch groups' });
+    }
+});
+
+// Search groups
+app.get('/api/groups/search', async (req, res) => {
+    try {
+        const { q } = req.query;
+        
+        if (!q || q.trim().length < 2) {
+            return res.json([]);
+        }
+        
+        const query = `
+            SELECT g.*, 
+                   u.username as owner_username,
+                   COUNT(DISTINCT gm.user_id) as member_count
+            FROM groups g
+            JOIN users u ON g.owner_id = u.user_id
+            LEFT JOIN group_members gm ON g.group_id = gm.group_id
+            WHERE LOWER(g.name) LIKE LOWER($1) OR
+                LOWER(g.bio) LIKE LOWER($1)
+            GROUP BY g.group_id, u.username
+            ORDER BY g.created_at DESC
+            LIMIT 10
+        `;
+        
+        const result = await pool.query(query, [`%${q}%`]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error searching groups:', err);
+        res.status(500).json({ error: 'Failed to search groups' });
+    }
+});
+
+// Get join requests for my groups (that I own)
+app.get('/api/groups/join-requests', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        
+        const query = `
+            SELECT r.*, g.name as group_name, u.username, u.user_id
+            FROM group_join_requests r
+            JOIN groups g ON r.group_id = g.group_id
+            JOIN users u ON r.user_id = u.user_id
+            WHERE g.owner_id = $1 AND r.status = 'pending'
+            ORDER BY r.created_at DESC
+        `;
+        
+        const result = await pool.query(query, [userId]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching join requests:', err);
+        res.status(500).json({ error: 'Failed to fetch join requests' });
+    }
+});
+
+// Get my join requests status
+app.get('/api/groups/my-join-requests', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        
+        const query = `
+            SELECT r.*, g.name as group_name 
+            FROM group_join_requests r
+            JOIN groups g ON r.group_id = g.group_id
+            WHERE r.user_id = $1
+            ORDER BY r.updated_at DESC NULLS LAST, r.created_at DESC
+        `;
+        
+        const result = await pool.query(query, [userId]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching user join requests:', err);
+        res.status(500).json({ error: 'Failed to fetch join requests' });
+    }
+});
+
+// Accept/reject join request
+app.post('/api/groups/join-requests/:requestId/respond', isAuthenticated, async (req, res) => {
+    try {
+        const { requestId } = req.params;
+        const { status } = req.body; // 'accepted' or 'rejected'
+        const userId = req.session.userId;
+        
+        if (!status || !['accepted', 'rejected'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status. Must be "accepted" or "rejected".' });
+        }
+        
+        // Get request details
+        const requestQuery = `
+            SELECT r.*, g.owner_id, g.name as group_name
+            FROM group_join_requests r
+            JOIN groups g ON r.group_id = g.group_id
+            WHERE r.request_id = $1
+        `;
+        
+        const requestResult = await pool.query(requestQuery, [requestId]);
+        
+        if (requestResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Request not found' });
+        }
+        
+        const request = requestResult.rows[0];
+        
+        // Check if the current user is the group owner
+        if (request.owner_id !== userId) {
+            return res.status(403).json({ error: 'Only the group owner can accept or reject join requests' });
+        }
+        
+        // Check if the request is already processed
+        if (request.status !== 'pending') {
+            return res.status(400).json({ error: `This request was already ${request.status}` });
+        }
+        
+        const client = await pool.connect();
+        
+        try {
+            await client.query('BEGIN');
+            
+            // Update request status
+            const updateRequestQuery = `
+                UPDATE group_join_requests
+                SET status = $1, updated_at = NOW()
+                WHERE request_id = $2
+                RETURNING *
+            `;
+            
+            await client.query(updateRequestQuery, [status, requestId]);
+            
+            // If accepted, add user to the group
+            if (status === 'accepted') {
+                const addMemberQuery = `
+                    INSERT INTO group_members (group_id, user_id, is_admin)
+                    VALUES ($1, $2, false)
+                    RETURNING *
+                `;
+                
+                await client.query(addMemberQuery, [request.group_id, request.user_id]);
+            }
+            
+            // Get requester's username
+            const usernameQuery = 'SELECT username FROM users WHERE user_id = $1';
+            const usernameResult = await client.query(usernameQuery, [request.user_id]);
+            const requestUsername = usernameResult.rows[0].username;
+            
+            // Create notification for the requester
+            const notificationContent = 
+                status === 'accepted' 
+                    ? `Your request to join "${request.group_name}" has been accepted`
+                    : `Your request to join "${request.group_name}" has been rejected`;
+            
+            const createNotificationQuery = `
+                INSERT INTO notifications (user_id, type, content, related_id)
+                VALUES ($1, 'join_response', $2, $3)
+                RETURNING *
+            `;
+            
+            await client.query(createNotificationQuery, [
+                request.user_id, 
+                notificationContent,
+                request.group_id
+            ]);
+            
+            await client.query('COMMIT');
+            
+            res.json({ 
+                message: `Request ${status} successfully`, 
+                status: status
+            });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
+    } catch (err) {
+        console.error('Error responding to join request:', err);
+        res.status(500).json({ error: 'Failed to respond to join request' });
+    }
+});
+
+// Get specific group details
+app.get('/api/groups/:groupId', async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const userId = req.session.userId || null;
+        
+        // Get group details
+        const groupQuery = `
+            SELECT g.*, 
+                   u.username as owner_username,
+                   COUNT(DISTINCT gm.user_id) as member_count,
+                   EXISTS(SELECT 1 FROM group_members WHERE group_id = g.group_id AND user_id = $2) as is_member,
+                   EXISTS(SELECT 1 FROM group_members WHERE group_id = g.group_id AND user_id = $2 AND is_admin = true) as is_admin
+            FROM groups g
+            JOIN users u ON g.owner_id = u.user_id
+            LEFT JOIN group_members gm ON g.group_id = gm.group_id
+            WHERE g.group_id = $1
+            GROUP BY g.group_id, u.username
+        `;
+        
+        const groupResult = await pool.query(groupQuery, [groupId, userId]);
+        
+        if (groupResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Group not found' });
+        }
+        
+        const group = groupResult.rows[0];
+        
+        // Get members of the group
+        const membersQuery = `
+            SELECT u.user_id, u.username, gm.is_admin, gm.joined_at
+            FROM group_members gm
+            JOIN users u ON gm.user_id = u.user_id
+            WHERE gm.group_id = $1
+            ORDER BY gm.is_admin DESC, gm.joined_at ASC
+        `;
+        
+        const membersResult = await pool.query(membersQuery, [groupId]);
+        
+        res.json({
+            group,
+            members: membersResult.rows
+        });
+    } catch (err) {
+        console.error('Error fetching group details:', err);
+        res.status(500).json({ error: 'Failed to fetch group details' });
+    }
+});
+
+// Create a new group
+app.post('/api/groups', isAuthenticated, async (req, res) => {
+    try {
+        const { name, bio, invite_only } = req.body;
+        const ownerId = req.session.userId;
+        
+        if (!name) {
+            return res.status(400).json({ error: 'Group name is required' });
+        }
+        
+        const client = await pool.connect();
+        
+        try {
+            await client.query('BEGIN');
+            
+            // Create the group
+            const createGroupQuery = `
+                INSERT INTO groups (name, owner_id, bio, invite_only)
+                VALUES ($1, $2, $3, $4)
+                RETURNING *
+            `;
+            
+            const groupResult = await client.query(createGroupQuery, [
+                name,
+                ownerId,
+                bio || '',
+                invite_only || false
+            ]);
+            
+            const newGroup = groupResult.rows[0];
+            
+            // Add owner as a member and admin
+            const addOwnerQuery = `
+                INSERT INTO group_members (group_id, user_id, is_admin)
+                VALUES ($1, $2, true)
+                RETURNING *
+            `;
+            
+            await client.query(addOwnerQuery, [newGroup.group_id, ownerId]);
+            
+            await client.query('COMMIT');
+            
+            // Get owner's username to return with response
+            const usernameQuery = 'SELECT username FROM users WHERE user_id = $1';
+            const usernameResult = await pool.query(usernameQuery, [ownerId]);
+            
+            res.status(201).json({
+                ...newGroup,
+                owner_username: usernameResult.rows[0].username,
+                member_count: 1,
+                is_member: true,
+                is_admin: true
+            });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
+    } catch (err) {
+        console.error('Error creating group:', err);
+        res.status(500).json({ error: 'Failed to create group' });
+    }
+});
+
+// Join a group
+app.post('/api/groups/:groupId/join', isAuthenticated, async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const userId = req.session.userId;
+        
+        // Check if group exists and if it's invite-only
+        const groupQuery = 'SELECT * FROM groups WHERE group_id = $1';
+        const groupResult = await pool.query(groupQuery, [groupId]);
+        
+        if (groupResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Group not found' });
+        }
+        
+        const group = groupResult.rows[0];
+        
+        // If group is invite-only, check if user is already invited
+        if (group.invite_only) {
+            return res.status(403).json({ error: 'This group requires an invitation to join' });
+        }
+        
+        // Check if user is already a member
+        const memberCheckQuery = 'SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2';
+        const memberCheckResult = await pool.query(memberCheckQuery, [groupId, userId]);
+        
+        if (memberCheckResult.rows.length > 0) {
+            return res.status(400).json({ error: 'You are already a member of this group' });
+        }
+        
+        // Add user as a member
+        const joinQuery = `
+            INSERT INTO group_members (group_id, user_id, is_admin)
+            VALUES ($1, $2, false)
+            RETURNING *
+        `;
+        
+        await pool.query(joinQuery, [groupId, userId]);
+        
+        res.json({ message: 'Joined group successfully' });
+    } catch (err) {
+        console.error('Error joining group:', err);
+        res.status(500).json({ error: 'Failed to join group' });
+    }
+});
+
+// Leave a group
+app.post('/api/groups/:groupId/leave', isAuthenticated, async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const userId = req.session.userId;
+        
+        // Check if user is the owner
+        const ownerCheckQuery = 'SELECT 1 FROM groups WHERE group_id = $1 AND owner_id = $2';
+        const ownerCheckResult = await pool.query(ownerCheckQuery, [groupId, userId]);
+        
+        if (ownerCheckResult.rows.length > 0) {
+            return res.status(400).json({ error: 'The owner cannot leave the group. Transfer ownership or delete the group instead.' });
+        }
+        
+        // Remove user from the group
+        const leaveQuery = 'DELETE FROM group_members WHERE group_id = $1 AND user_id = $2';
+        await pool.query(leaveQuery, [groupId, userId]);
+        
+        res.json({ message: 'Left group successfully' });
+    } catch (err) {
+        console.error('Error leaving group:', err);
+        res.status(500).json({ error: 'Failed to leave group' });
+    }
+});
+
+// Get group messages
+app.get('/api/groups/:groupId/messages', isAuthenticated, async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const userId = req.session.userId;
+        
+        // Check if user is a member of the group
+        const memberCheckQuery = `
+            SELECT 1 FROM group_members 
+            WHERE group_id = $1 AND user_id = $2
+            UNION
+            SELECT 1 FROM groups
+            WHERE group_id = $1 AND owner_id = $2
+        `;
+        
+        const memberCheck = await pool.query(memberCheckQuery, [groupId, userId]);
+        
+        if (memberCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'You must be a member to view group messages' });
+        }
+        
+        // Get messages
+        const messagesQuery = `
+            SELECT gm.*, u.username
+            FROM group_messages gm
+            JOIN users u ON gm.user_id = u.user_id
+            WHERE gm.group_id = $1
+            ORDER BY gm.created_at ASC
+        `;
+        
+        const messages = await pool.query(messagesQuery, [groupId]);
+        
+        res.json(messages.rows);
+    } catch (err) {
+        console.error('Error fetching group messages:', err);
+        res.status(500).json({ error: 'Failed to fetch group messages' });
+    }
+});
+
+// Send a message to a group
+app.post('/api/groups/:groupId/messages', isAuthenticated, async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const { message } = req.body;
+        const userId = req.session.userId;
+        
+        if (!message || message.trim() === '') {
+            return res.status(400).json({ error: 'Message cannot be empty' });
+        }
+        
+        // Check if user is a member of the group
+        const memberCheckQuery = `
+            SELECT 1 FROM group_members 
+            WHERE group_id = $1 AND user_id = $2
+            UNION
+            SELECT 1 FROM groups
+            WHERE group_id = $1 AND owner_id = $2
+        `;
+        
+        const memberCheck = await pool.query(memberCheckQuery, [groupId, userId]);
+        
+        if (memberCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'You must be a member to send messages' });
+        }
+        
+        // Send the message
+        const sendMessageQuery = `
+            INSERT INTO group_messages (group_id, user_id, message)
+            VALUES ($1, $2, $3)
+            RETURNING *
+        `;
+        
+        const result = await pool.query(sendMessageQuery, [
+            groupId,
+            userId,
+            message.trim()
+        ]);
+        
+        // Get username for the response
+        const usernameQuery = 'SELECT username FROM users WHERE user_id = $1';
+        const usernameResult = await pool.query(usernameQuery, [userId]);
+        
+        const newMessage = {
+            ...result.rows[0],
+            username: usernameResult.rows[0].username
+        };
+        
+        res.status(201).json(newMessage);
+    } catch (err) {
+        console.error('Error sending group message:', err);
+        res.status(500).json({ error: 'Failed to send message' });
+    }
+});
+
+// Get user's groups
+app.get('/api/user/groups', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        
+        const query = `
+            SELECT g.*, 
+                   u.username as owner_username,
+                   COUNT(DISTINCT gm2.user_id) as member_count,
+                   gm1.is_admin
+            FROM groups g
+            JOIN users u ON g.owner_id = u.user_id
+            JOIN group_members gm1 ON g.group_id = gm1.group_id AND gm1.user_id = $1
+            LEFT JOIN group_members gm2 ON g.group_id = gm2.group_id
+            GROUP BY g.group_id, u.username, gm1.is_admin
+            ORDER BY g.created_at DESC
+        `;
+        
+        const result = await pool.query(query, [userId]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching user groups:', err);
+        res.status(500).json({ error: 'Failed to fetch user groups' });
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ==== NOTIFICATIONS SYSTEM APIs ====
+
+// Get user's notifications
+app.get('/api/notifications', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        
+        const query = `
+            SELECT * FROM notifications 
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+        `;
+        
+        const result = await pool.query(query, [userId]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching notifications:', err);
+        res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+});
+
+// Get unread notification count
+app.get('/api/notifications/unread-count', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        
+        const query = `
+            SELECT COUNT(*) as count FROM notifications 
+            WHERE user_id = $1 AND is_read = false
+        `;
+        
+        const result = await pool.query(query, [userId]);
+        res.json({ count: parseInt(result.rows[0].count) });
+    } catch (err) {
+        console.error('Error fetching unread count:', err);
+        res.status(500).json({ error: 'Failed to fetch notification count' });
+    }
+});
+
+// Mark all notifications as read
+app.post('/api/notifications/read-all', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        
+        const updateQuery = `
+            UPDATE notifications 
+            SET is_read = true 
+            WHERE user_id = $1 AND is_read = false
+            RETURNING *
+        `;
+        
+        const result = await pool.query(updateQuery, [userId]);
+        
+        res.json({ 
+            message: 'All notifications marked as read', 
+            count: result.rowCount 
+        });
+    } catch (err) {
+        console.error('Error marking all notifications as read:', err);
+        res.status(500).json({ error: 'Failed to update notifications' });
+    }
+});
+
+// Mark notification as read
+app.post('/api/notifications/:notificationId/read', isAuthenticated, async (req, res) => {
+    try {
+        const { notificationId } = req.params;
+        const userId = req.session.userId;
+        
+        // Ensure the notification belongs to the user
+        const updateQuery = `
+            UPDATE notifications 
+            SET is_read = true 
+            WHERE notification_id = $1 AND user_id = $2
+            RETURNING *
+        `;
+        
+        const result = await pool.query(updateQuery, [notificationId, userId]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Notification not found' });
+        }
+        
+        res.json({ message: 'Notification marked as read', notification: result.rows[0] });
+    } catch (err) {
+        console.error('Error marking notification as read:', err);
+        res.status(500).json({ error: 'Failed to update notification' });
+    }
+});
+
+// ==== GROUP JOIN REQUEST APIs ====
+
+// Request to join a group
+app.post('/api/groups/:groupId/request-join', isAuthenticated, async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const { message } = req.body;
+        const userId = req.session.userId;
+        
+        // Check if group exists and if it's invite-only
+        const groupQuery = 'SELECT * FROM groups WHERE group_id = $1';
+        const groupResult = await pool.query(groupQuery, [groupId]);
+        
+        if (groupResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Group not found' });
+        }
+        
+        const group = groupResult.rows[0];
+        
+        // If group is not invite-only, users can join directly
+        if (!group.invite_only) {
+            return res.status(400).json({ 
+                error: 'This group does not require join requests. You can join directly.' 
+            });
+        }
+        
+        // Check if user is already a member
+        const memberCheckQuery = 'SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2';
+        const memberCheckResult = await pool.query(memberCheckQuery, [groupId, userId]);
+        
+        if (memberCheckResult.rows.length > 0) {
+            return res.status(400).json({ error: 'You are already a member of this group' });
+        }
+        
+        // Check if there's an existing pending request
+        const existingRequestQuery = `
+            SELECT * FROM group_join_requests 
+            WHERE group_id = $1 AND user_id = $2 AND status = 'pending'
+        `;
+        
+        const existingRequestResult = await pool.query(existingRequestQuery, [groupId, userId]);
+        
+        if (existingRequestResult.rows.length > 0) {
+            return res.status(400).json({ error: 'You already have a pending request to join this group' });
+        }
+        
+        const client = await pool.connect();
+        
+        try {
+            await client.query('BEGIN');
+            
+            // Check for any previous requests (accepted/rejected) and update status if found
+            const previousRequestQuery = `
+                SELECT request_id FROM group_join_requests 
+                WHERE group_id = $1 AND user_id = $2
+            `;
+            
+            const previousRequestResult = await client.query(previousRequestQuery, [groupId, userId]);
+            
+            let request;
+            
+            if (previousRequestResult.rows.length > 0) {
+                // Update the existing request to pending
+                const updateRequestQuery = `
+                    UPDATE group_join_requests
+                    SET status = 'pending', message = $3, updated_at = NOW()
+                    WHERE group_id = $1 AND user_id = $2
+                    RETURNING *
+                `;
+                
+                const updateResult = await client.query(updateRequestQuery, [groupId, userId, message || null]);
+                request = updateResult.rows[0];
+            } else {
+                // Create new join request
+                const createRequestQuery = `
+                    INSERT INTO group_join_requests (group_id, user_id, message)
+                    VALUES ($1, $2, $3)
+                    RETURNING *
+                `;
+                
+                const requestResult = await client.query(createRequestQuery, [groupId, userId, message || null]);
+                request = requestResult.rows[0];
+            }
+            
+            // Get user's username for notification
+            const usernameQuery = 'SELECT username FROM users WHERE user_id = $1';
+            const usernameResult = await client.query(usernameQuery, [userId]);
+            const username = usernameResult.rows[0].username;
+            
+            // Create notification for group owner
+            const notificationContent = `${username} has requested to join your group "${group.name}"`;
+            
+            const createNotificationQuery = `
+                INSERT INTO notifications (user_id, type, content, related_id)
+                VALUES ($1, 'join_request', $2, $3)
+                RETURNING *
+            `;
+            
+            await client.query(createNotificationQuery, [
+                group.owner_id, 
+                notificationContent,
+                request.request_id
+            ]);
+            
+            await client.query('COMMIT');
+            
+            res.status(201).json({ 
+                message: 'Join request sent successfully', 
+                request: request 
+            });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
+    } catch (err) {
+        console.error('Error requesting to join group:', err);
+        res.status(500).json({ error: 'Failed to send join request' });
+    }
+});
+
+// Delete a group
+app.post('/api/groups/:groupId/delete', isAuthenticated, async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const userId = req.session.userId;
+        
+        console.log(`Delete request received for group ${groupId} from user ${userId}`);
+        
+        // Check if user is the owner of the group
+        const ownerCheckQuery = 'SELECT owner_id FROM groups WHERE group_id = $1';
+        const ownerResult = await pool.query(ownerCheckQuery, [groupId]);
+        
+        console.log('Owner check result:', ownerResult.rows);
+        
+        if (ownerResult.rows.length === 0) {
+            console.log(`Group ${groupId} not found in database`);
+            return res.status(404).json({ error: 'Group not found' });
+        }
+        
+        if (ownerResult.rows[0].owner_id !== userId) {
+            console.log(`User ${userId} is not the owner of group ${groupId}. Owner is ${ownerResult.rows[0].owner_id}`);
+            return res.status(403).json({ error: 'Only the group owner can delete the group' });
+        }
+        
+        const client = await pool.connect();
+        
+        try {
+            await client.query('BEGIN');
+            
+            // Delete all join requests for this group
+            await client.query('DELETE FROM group_join_requests WHERE group_id = $1', [groupId]);
+            
+            // Delete all messages in the group
+            await client.query('DELETE FROM group_messages WHERE group_id = $1', [groupId]);
+            
+            // Delete all group members
+            await client.query('DELETE FROM group_members WHERE group_id = $1', [groupId]);
+            
+            // Delete notifications related to this group
+            await client.query('DELETE FROM notifications WHERE related_id = $1 AND type IN (\'join_request\', \'join_response\')', [groupId]);
+            
+            // Finally delete the group itself
+            await client.query('DELETE FROM groups WHERE group_id = $1', [groupId]);
+            
+            await client.query('COMMIT');
+            
+            console.log(`Group ${groupId} successfully deleted`);
+            res.json({ message: 'Group deleted successfully' });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            console.error(`Error in transaction for deleting group ${groupId}:`, err);
+            throw err;
+        } finally {
+            client.release();
+        }
+    } catch (err) {
+        console.error('Error deleting group:', err);
+        res.status(500).json({ error: 'Failed to delete group' });
+    }
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

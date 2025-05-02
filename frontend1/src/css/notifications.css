@@ -1,0 +1,132 @@
+.notifications-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: var(--bg-primary);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.notifications-container h2 {
+  margin-bottom: 20px;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+}
+
+.notifications-loading,
+.notifications-error,
+.no-notifications {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+}
+
+.notifications-error {
+  color: #e74c3c;
+}
+
+.notifications-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notification-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background-color: var(--bg-secondary);
+  transition: all 0.3s ease;
+}
+
+.notification-item.unread {
+  border-left: 4px solid #3498db;
+  background-color: rgba(52, 152, 219, 0.1);
+}
+
+.notification-item.read {
+  opacity: 0.7;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-content p {
+  margin: 0 0 5px 0;
+  color: var(--text-primary);
+}
+
+.notification-date {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.notification-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.accept-btn,
+.reject-btn,
+.mark-read-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.accept-btn {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.accept-btn:hover {
+  background-color: #27ae60;
+}
+
+.reject-btn {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.reject-btn:hover {
+  background-color: #c0392b;
+}
+
+.mark-read-btn {
+  background-color: #7f8c8d;
+  color: white;
+}
+
+.mark-read-btn:hover {
+  background-color: #95a5a6;
+}
+
+/* Dark mode adaptations */
+.dark-mode .notification-item {
+  background-color: var(--bg-secondary-dark);
+}
+
+.dark-mode .notification-item.unread {
+  background-color: rgba(52, 152, 219, 0.2);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .notification-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .notification-actions {
+    margin-top: 10px;
+    align-self: flex-end;
+  }
+} 

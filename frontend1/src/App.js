@@ -20,6 +20,12 @@ import ThreadDetail from "./pages/ThreadDetail";
 import CreateThread from "./pages/CreateThread";
 import SubscribedThreads from "./pages/SubscribedThreads";
 import VerifyEmail from "./pages/VerifyEmail";
+// Import Group pages
+import Groups from "./pages/Groups";
+import GroupDetails from "./pages/GroupDetails";
+import CreateGroup from "./pages/CreateGroup";
+// Import Notifications page
+import Notifications from "./pages/Notifications";
 
 import { ThemeProvider } from "./components/ThemeContext";
 import ThemeToggle from "./components/ThemeToggle";
@@ -64,7 +70,15 @@ function App() {
           <Route path="/threads/create" element={<CreateThread />} />
           <Route path="/threads/:threadId" element={<ThreadDetail />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
-         
+          
+        {/* Group Routes */}
+        <Route path="/groups" element={<Groups />} />
+        <Route path="/groups/create" element={<CreateGroup />} />
+        <Route path="/groups/:groupId" element={<GroupDetails />} />
+        
+        {/* Notifications Route */}
+        <Route path="/notifications" element={<Notifications />} />
+       
           <Route path="*" element={<NotFound />} />
         </Routes>
         
