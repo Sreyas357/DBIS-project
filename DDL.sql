@@ -8,13 +8,15 @@ DROP TABLE IF EXISTS Users CASCADE;
 DROP TABLE IF EXISTS group_messages CASCADE;
 DROP TABLE IF EXISTS group_members CASCADE;
 DROP TABLE IF EXISTS groups CASCADE;
+DROP TABLE IF EXISTS user_genre_interests CASCADE;
 
 -- user info - username, email, password
 CREATE TABLE Users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL
+    password_hash TEXT,
+    google_id VARCHAR(255) UNIQUE
 );
 
 -- followers - user_id, follower_id
@@ -252,4 +254,16 @@ CREATE INDEX idx_notifications_is_read ON notifications(is_read);
 -- Create index for faster join request lookups
 CREATE INDEX idx_join_requests_group_id ON group_join_requests(group_id);
 CREATE INDEX idx_join_requests_user_id ON group_join_requests(user_id);
-CREATE INDEX idx_join_requests_status ON group_join_requests(status); 
+CREATE INDEX idx_join_requests_status ON group_join_requests(status);
+
+-- User genre interests - to store user's genre preferences
+CREATE TABLE user_genre_interests (
+    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+    genre_id INTEGER REFERENCES genres(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, genre_id)
+);
+
+-- Create index for faster user genre interest lookups
+CREATE INDEX idx_user_genre_interests_user_id ON user_genre_interests(user_id);
+CREATE INDEX idx_user_genre_interests_genre_id ON user_genre_interests(genre_id); 

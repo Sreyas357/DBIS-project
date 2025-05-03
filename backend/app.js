@@ -5,6 +5,8 @@ const bcrypt = require("bcrypt");
 const cors = require("cors");
 const { Pool } = require("pg");
 const nodemailer = require('nodemailer');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 const app = express();
 const port = 4000;
@@ -103,6 +105,12 @@ app.post('/signup', async (req, res) => {
     const emailCheckResult = await pool.query(emailCheckQuery, [email]);
 
     if (emailCheckResult.rows.length > 0) {
+      // Check if this is a Google user trying to set a password
+      if (emailCheckResult.rows[0].google_id) {
+        return res.status(400).json({ 
+          message: "This email is already registered with Google Sign-In. Please use Google to login." 
+        });
+      }
       return res.status(400).json({ message: "Error: Email is already registered." });
     }
 
@@ -159,6 +167,18 @@ app.post("/login", async (req, res) => {
 
     const user = result.rows[0];
 
+    // Check if this is a Google user trying to login with password
+    if (user.google_id && !user.password_hash) {
+      return res.status(400).json({ 
+        message: "This account uses Google Sign-In. Please login with Google instead." 
+      });
+    }
+
+    // If user has no password (Google-only user who hasn't set a password)
+    if (!user.password_hash) {
+      return res.status(400).json({ message: "Invalid login method for this account" });
+    }
+
     // Compare the provided password with the hashed password in the database
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
@@ -195,6 +215,23 @@ app.get("/isLoggedIn", (req, res) => {
   }
   console.log("User is not logged in, no valid session found");
   return res.status(400).json({ message: "User is not logged in" });
+});
+
+// Check auth status (alias for isLoggedIn to maintain compatibility)
+app.get("/check-auth", (req, res) => {
+  if (req.session && req.session.userId) {
+    console.log("User is authenticated with session:", {
+      userId: req.session.userId,
+      username: req.session.username
+    });
+    return res.status(200).json({
+      authenticated: true,
+      username: req.session.username,
+      userId: req.session.userId
+    });
+  }
+  console.log("User is not authenticated, no valid session found");
+  return res.status(401).json({ authenticated: false, message: "Not authenticated" });
 });
 
 // Logout
@@ -2156,23 +2193,80 @@ app.post('/api/auth/send-verification-email', async (req, res) => {
     }
 });
 
+// Save user genre interests
+app.post('/api/user/genres', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const { genres } = req.body;
+        
+        // Validate input
+        if (!Array.isArray(genres) || genres.length < 3) {
+            return res.status(400).json({ message: 'Please select at least 3 genres' });
+        }
+        
+        // Begin transaction
+        const client = await pool.connect();
+        
+        try {
+            await client.query('BEGIN');
+            
+            // First, delete any existing genre interests for this user
+            await client.query('DELETE FROM user_genre_interests WHERE user_id = $1', [userId]);
+            
+            // Insert each genre interest
+            for (const genreId of genres) {
+                // Verify the genre exists
+                const genreCheck = await client.query('SELECT id FROM genres WHERE id = $1', [genreId]);
+                
+                if (genreCheck.rows.length > 0) {
+                    await client.query(
+                        'INSERT INTO user_genre_interests (user_id, genre_id) VALUES ($1, $2)',
+                        [userId, genreId]
+                    );
+                }
+            }
+            
+            await client.query('COMMIT');
+            
+            res.status(200).json({ 
+                message: 'Genre preferences saved successfully',
+                genres: genres
+            });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
+    } catch (err) {
+        console.error('Error saving genre interests:', err);
+        res.status(500).json({ message: 'Failed to save genre preferences' });
+    }
+});
 
+// Get user's genre interests
+app.get('/api/user/genres', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        
+        const query = `
+            SELECT g.id, g.name 
+            FROM genres g
+            JOIN user_genre_interests ugi ON g.id = ugi.genre_id
+            WHERE ugi.user_id = $1
+            ORDER BY g.name
+        `;
+        
+        const result = await pool.query(query, [userId]);
+        
+        res.status(200).json(result.rows);
+    } catch (err) {
+        console.error('Error fetching user genre interests:', err);
+        res.status(500).json({ message: 'Failed to fetch genre preferences' });
+    }
+});
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// ... existing code ...
 
 // ==== GROUP SYSTEM APIs ====
 
@@ -2963,6 +3057,148 @@ app.post('/api/groups/:groupId/delete', isAuthenticated, async (req, res) => {
     } catch (err) {
         console.error('Error deleting group:', err);
         res.status(500).json({ error: 'Failed to delete group' });
+    }
+});
+
+// Configure passport
+passport.serializeUser((user, done) => {
+    done(null, user.user_id);
+});
+
+passport.deserializeUser(async (id, done) => {
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE user_id = $1', [id]);
+        done(null, result.rows[0]);
+    } catch (err) {
+        done(err);
+    }
+});
+
+// Configure Google Strategy
+passport.use(new GoogleStrategy({
+    clientID: "866009930804-pgvn207nnufics2pu4pfbbkaihgf12vg.apps.googleusercontent.com",
+    clientSecret: "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",
+    callbackURL: "http://localhost:4000/auth/google/callback",
+    passReqToCallback: true
+}, async (req, accessToken, refreshToken, profile, done) => {
+    try {
+        console.log('Google profile:', profile);
+        const source = req.query.source || 'login'; // Get source from session
+        // console.log('Auth source:', source);
+        
+        // Check if user exists by Google ID
+        const result = await pool.query('SELECT * FROM users WHERE google_id = $1', [profile.id]);
+        
+        if (result.rows.length > 0) {
+            // User exists with this Google ID, return the user
+            return done(null, result.rows[0]);
+        } else {
+            // Extract data from Google profile
+            const email = profile.emails[0].value;
+            const name = profile.displayName; // Use the full display name from Google
+            
+            // Create a username based on the name (without spaces) plus random number for uniqueness
+            const username = name.replace(/\s+/g, '') + Math.floor(Math.random() * 1000);
+            
+            // Check if email already exists
+            const emailCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+            if (emailCheck.rows.length > 0) {
+                // User with this email exists
+                if (source === 'signup') {
+                    // If trying to sign up, mark as existing email
+                    const user = emailCheck.rows[0];
+                    user.isExistingEmail = true;
+                    return done(null, user);
+                }
+                
+                // If coming from login, associate Google ID with existing account
+                const updateResult = await pool.query(
+                    'UPDATE users SET google_id = $1 WHERE email = $2 RETURNING *',
+                    [profile.id, email]
+                );
+                return done(null, updateResult.rows[0]);
+            }
+            
+            // Create new user with NULL password_hash
+            const newUserResult = await pool.query(
+                'INSERT INTO users (username, email, google_id, password_hash) VALUES ($1, $2, $3, NULL) RETURNING *',
+                [username, email, profile.id]
+            );
+            
+            console.log('Created new Google user:', newUserResult.rows[0]);
+            return done(null, newUserResult.rows[0]);
+        }
+    } catch (err) {
+        console.error('Error in Google OAuth strategy:', err);
+        return done(err);
+    }
+}));
+
+// Initialize passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Google OAuth routes
+app.get('/auth/google', (req, res, next) => {
+    // Store the source in the session to retrieve it in callback
+    req.session.oauth_source = req.query.source;
+    next();
+}, passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    prompt: 'select_account'
+}));
+
+// Helper function to check if user has selected genres
+async function hasSelectedGenres(userId) {
+    try {
+        const result = await pool.query(
+            'SELECT COUNT(*) FROM user_genre_interests WHERE user_id = $1',
+            [userId]
+        );
+        
+        return parseInt(result.rows[0].count) >= 3;
+    } catch (err) {
+        console.error('Error checking genre interests:', err);
+        return false;
+    }
+}
+
+app.get('/auth/google/callback', 
+    passport.authenticate('google', { failureRedirect: '/login' }),
+    async (req, res) => {
+        // Successful authentication
+        req.session.userId = req.user.user_id;
+        req.session.username = req.user.username;
+        
+        // Check if this is a new user by checking if isExistingEmail property was set
+        if (req.user.isExistingEmail) {
+            // Redirect to login with a message
+            return res.redirect(`http://localhost:3000/login?error=There is already an account with this email, please login.`);
+        }
+        
+        // Check if the user has selected genre interests
+        const hasGenres = await hasSelectedGenres(req.user.user_id);
+        
+        if (!hasGenres) {
+            // User needs to select genres, redirect to the genre selection page
+            return res.redirect(`http://localhost:3000/signup?needsGenres=true`);
+        }
+        
+        // User has already selected genres, redirect to dashboard
+        res.redirect('http://localhost:3000/dashboard');
+    }
+);
+
+// Check if user needs to select genres
+app.get('/api/user/needs-genres', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const needsGenres = !(await hasSelectedGenres(userId));
+        
+        res.json({ needsGenres });
+    } catch (err) {
+        console.error('Error checking if user needs genres:', err);
+        res.status(500).json({ error: 'Server error' });
     }
 });
 

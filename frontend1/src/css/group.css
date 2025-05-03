@@ -74,13 +74,23 @@
   text-decoration: underline;
 }
 
+/* Improved button styling */
 .group-action-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.9rem;
   border-radius: 4px;
   border: none;
   font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.group-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
 
 .group-action-btn.join {
@@ -101,6 +111,25 @@
   background-color: #e0e0e0;
 }
 
+/* New delete button styling */
+.group-action-btn.delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.group-action-btn.delete:hover {
+  background-color: #c82333;
+}
+
+.dark-mode .group-action-btn.delete {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.dark-mode .group-action-btn.delete:hover {
+  background-color: #b71c1c;
+}
+
 .dark-mode .group-action-btn.leave {
   background-color: #444;
   color: #e0e0e0;
@@ -113,6 +142,8 @@
 .group-action-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .group-action-btn.request {
@@ -352,32 +383,71 @@
   font-size: 2rem;
 }
 
+/* Improved group details buttons */
 .join-group-btn, .edit-group-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 1rem;
   background-color: #4285f4;
   color: white;
   border: none;
   border-radius: 4px;
   font-weight: 600;
   cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .join-group-btn:hover, .edit-group-btn:hover {
   background-color: #2b6ed9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
 
 .leave-group-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 1rem;
   background-color: #f1f1f1;
   color: #333;
   border: none;
   border-radius: 4px;
   font-weight: 600;
   cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .leave-group-btn:hover {
   background-color: #e0e0e0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+/* Delete group button in details page */
+.delete-group-btn {
+  padding: 0.4rem 1rem;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.delete-group-btn:hover {
+  background-color: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.dark-mode .delete-group-btn {
+  background-color: #d32f2f;
+}
+
+.dark-mode .delete-group-btn:hover {
+  background-color: #b71c1c;
 }
 
 .dark-mode .leave-group-btn {
@@ -390,7 +460,7 @@
 }
 
 .back-button {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 1rem;
   background-color: #f1f1f1;
   color: #333;
   border: none;
@@ -398,10 +468,13 @@
   font-weight: 600;
   cursor: pointer;
   margin-top: 1rem;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
 }
 
 .back-button:hover {
   background-color: #e0e0e0;
+  transform: translateY(-1px);
 }
 
 .dark-mode .back-button {
@@ -434,6 +507,11 @@
 @media (max-width: 768px) {
   .group-content {
     grid-template-columns: 1fr;
+  }
+  
+  .group-action-btn, .join-group-btn, .leave-group-btn, .delete-group-btn, .edit-group-btn {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
   }
 }
 

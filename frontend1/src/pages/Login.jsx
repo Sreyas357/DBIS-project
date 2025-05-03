@@ -1,21 +1,50 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { apiUrl } from "../config/config";
 import "../css/login.css"; // Import CSS file
 
 const Login = () => {
   const navigate = useNavigate(); // Use this to redirect users
+  const location = useLocation();
 
+  // Read error from URL or navigation state
+  useEffect(() => {
+    // Check URL query parameters
+    const params = new URLSearchParams(window.location.search);
+    const urlError = params.get('error');
+    
+    if (urlError === 'existing_account') {
+      setErrorMessage('There is already an account with this Gmail, please login.');
+    } else if (urlError) {
+      setErrorMessage(urlError);
+    }
+    
+    // Check location state (from redirects)
+    if (location.state && location.state.errorMessage) {
+      setErrorMessage(location.state.errorMessage);
+      // Clear state after reading
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   // useEffect checks if the user is already logged in
   // if already loggedIn then it will simply navigate to the dashboard
-  // TODO: Implement the checkStatus function.
   useEffect(() => {
     const checkStatus = async () => {
-      // Implement your logic here
+      try {
+        const response = await fetch(`${apiUrl}/isLoggedIn`, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (response.ok) {
+          navigate("/dashboard");
+        }
+      } catch (err) {
+        console.error("Error checking auth status:", err);
+      }
     };
     checkStatus();
-  }, []);
+  }, [navigate]);
 
   // Read about useState to manage form data
   const [formData, setFormData] = useState({
@@ -35,6 +64,10 @@ const handleChange = (e) => {
   });
 };
 
+// Handle Google Sign-In
+const handleGoogleSignIn = () => {
+  window.location.href = 'http://localhost:4000/auth/google?source=login';
+};
 
 
 // Handle form submission for login
@@ -95,6 +128,24 @@ return (
         {errorMessage && <p className="error-message">{errorMessage}</p>}
         <button type="submit">Login</button>
       </form>
+      
+      <div className="or-divider">
+        <span>OR</span>
+      </div>
+      
+      <button 
+        type="button" 
+        className="google-sign-in-btn"
+        onClick={handleGoogleSignIn}
+      >
+        <img 
+          src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" 
+          alt="Google logo" 
+          className="google-icon" 
+        />
+        Sign in with Google
+      </button>
+      
       <p className="signup-link">
         Don't have an account? <Link to="/signup" className="signup-link-text">Sign up here</Link>
       </p>

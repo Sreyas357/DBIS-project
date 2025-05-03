@@ -8,9 +8,7 @@ const Dashboard = () => {
 
   const [username, setUsername] = useState("User");
 
-  // TODO: Implement the checkStatus function.
-  // This function should check if the user is logged in.
-  // If not logged in, redirect to the login page.
+  // Check if user is logged in and has selected genres
   useEffect(() => {
     const checkStatus = async () => {
       try {
@@ -25,6 +23,21 @@ const Dashboard = () => {
           const data = await response.json();
           console.log("data is ",data);
           setUsername(data.username); // Assuming the response has a username field
+          
+          // Check if user needs to select genres
+          const genreCheck = await fetch(`${apiUrl}/api/user/needs-genres`, {
+            method: "GET",
+            credentials: "include",
+          });
+          
+          if (genreCheck.ok) {
+            const genreData = await genreCheck.json();
+            
+            // If user needs to select genres, redirect to signup page
+            if (genreData.needsGenres) {
+              navigate("/signup?needsGenres=true");
+            }
+          }
         } else {
           // If not logged in, redirect to the login page
           navigate("/login");
