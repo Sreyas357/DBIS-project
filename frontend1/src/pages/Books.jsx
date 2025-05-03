@@ -354,12 +354,12 @@ const Books = () => {
                             title: volumeInfo.title || "Unknown Title",
                             author: volumeInfo.authors?.[0] || "Unknown",
                             description: volumeInfo.description || "No description available",
-                            coverurl: volumeInfo.imageLinks?.thumbnail || null, // lowercase url
-                            publishedyear: volumeInfo.publishedDate ? volumeInfo.publishedDate.substring(0, 4) : "Unknown", // lowercase year
-                            pagecount: volumeInfo.pageCount || null, // lowercase count
+                            coverUrl: volumeInfo.imageLinks?.thumbnail || null, // lowercase url
+                            publishedYear: volumeInfo.publishedDate ? volumeInfo.publishedDate.substring(0, 4) : "Unknown", // lowercase year
+                            pageCount: volumeInfo.pageCount || null, // lowercase count
                             publisher: volumeInfo.publisher || "Unknown",
-                            previewlink: volumeInfo.previewLink || null, // lowercase link
-                            genres: volumeInfo.categories || [],
+                            previewLink: volumeInfo.previewLink || null, // lowercase link
+                            categories: volumeInfo.categories || [],
                             isbn: volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_13')?.identifier || 
                                   volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_10')?.identifier || null
                         })
