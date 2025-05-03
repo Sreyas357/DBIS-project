@@ -520,7 +520,7 @@ const Books = () => {
                                 <FaSearch className="search-icon" />
                                 <input
                                     type="text"
-                                    placeholder="Search books..."
+                                    placeholder="Search..."
                                     className="search-bar"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -532,6 +532,9 @@ const Books = () => {
                                         }
                                     }}
                                 />
+                                <button className="search-button" onClick={handleSearch}>
+                                    <FaSearch />
+                                </button>
                                 {searchQuery && (
                                     <FaTimes 
                                         className="clear-search-icon" 
@@ -599,7 +602,6 @@ const Books = () => {
                                     <option value="title">Title Only</option>
                                     <option value="author">Author Only</option>
                                 </select>
-                                <button className="search-button" onClick={handleSearch}>Search</button>
                             </div>
                         </div>
 

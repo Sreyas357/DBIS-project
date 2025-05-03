@@ -14,8 +14,8 @@ const BOOK_GENRES = [
 
 // Database connection pool
 const pool = new Pool({
-  user: "postgres",
-  password: "0608",
+  user: "lokesh8639",
+  password: "lokesh@2004",
   database: "ecommerce",
   host: "localhost",
   port: 5432

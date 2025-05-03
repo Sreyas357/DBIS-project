@@ -94,8 +94,8 @@ const Threads = () => {
     setSearchQuery('');
   };
   
-  const handleSortChange = (e) => {
-    setFilter(e.target.value);
+  const handleFilterChange = (value) => {
+    setFilter(value);
   };
 
   return (
@@ -114,6 +114,8 @@ const Threads = () => {
             <SearchBar 
               onSearch={handleSearch}
               categoryId="all"
+              filter={filter}
+              onFilterChange={handleFilterChange}
             />
           </div>
           
@@ -125,16 +127,6 @@ const Threads = () => {
                   <button className="clear-search-btn" onClick={clearSearch}>✕</button>
                 </div>
               )}
-              <select 
-                value={filter} 
-                onChange={handleSortChange}
-                className="thread-sort-select"
-              >
-                <option value="trending">Trending</option>
-                <option value="newest">Newest</option>
-                <option value="most-commented">Most Commented</option>
-                <option value="most-viewed">Most Views</option>
-              </select>
             </div>
             <button 
               className="create-thread-button"

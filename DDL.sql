@@ -267,4 +267,40 @@ CREATE TABLE user_genre_interests (
 
 -- Create index for faster user genre interest lookups
 CREATE INDEX idx_user_genre_interests_user_id ON user_genre_interests(user_id);
-CREATE INDEX idx_user_genre_interests_genre_id ON user_genre_interests(genre_id); 
+CREATE INDEX idx_user_genre_interests_genre_id ON user_genre_interests(genre_id);
+
+-- Drop reading_lists table if it exists
+DROP TABLE IF EXISTS reading_lists CASCADE;
+
+-- Create reading lists table for users to organize books
+CREATE TABLE reading_lists (
+    list_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    is_public BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index for faster reading list lookups
+CREATE INDEX idx_reading_lists_user_id ON reading_lists(user_id);
+
+-- Create the user_book_status table
+DROP TABLE IF EXISTS user_book_status CASCADE;
+
+CREATE TABLE user_book_status (
+    status_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+    status VARCHAR(50) NOT NULL DEFAULT 'plan_to_read', -- plan_to_read, reading, completed, on_hold, dropped
+    is_private BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, book_id)
+);
+
+-- Create index for faster lookups
+CREATE INDEX idx_user_book_status_user_id ON user_book_status(user_id);
+CREATE INDEX idx_user_book_status_book_id ON user_book_status(book_id);
+CREATE INDEX idx_user_book_status_status ON user_book_status(status); 

@@ -89,18 +89,18 @@ html, body {
   margin-bottom: 25px;
   background-color: #fff;
   border-radius: 8px;
-  padding: 20px;
+  padding: 15px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
 /* Search container */
 .search-container {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
   width: 100%;
 }
 
@@ -108,65 +108,97 @@ html, body {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
+  flex: 1;
 }
 
 .search-icon {
   position: absolute;
   left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   color: #777;
+  z-index: 1;
 }
 
 .clear-search-icon {
   position: absolute;
-  right: 12px;
+  right: 70px;
+  top: 50%;
+  transform: translateY(-50%);
   color: #777;
   cursor: pointer;
   transition: color 0.2s;
-}
-
-.clear-search-icon:hover {
-  color: #333;
+  z-index: 1;
 }
 
 .search-bar {
   width: 100%;
-  padding: 12px 35px;
-  border: 1px solid #ddd;
-  border-radius: 25px;
-  font-size: 1rem;
-  transition: border-color 0.3s;
+  padding: 12px 35px 12px 35px;
+  border: 1px solid #e0d2ff;
+  border-radius: 30px;
+  font-size: 16px;
+  background-color: #f9f5ff;
+  height: 44px;
+  box-sizing: border-box;
+  outline: none;
 }
 
 .search-bar:focus {
-  outline: none;
-  border-color: #1a73e8;
-  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+  border-color: #6c63ff;
+  background-color: #fff;
 }
 
 .search-options {
   display: flex;
   gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .search-type-select {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  flex: 1;
+  padding: 8px 15px;
+  border: 1px solid #e0d2ff;
+  border-radius: 20px;
+  background-color: white;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+  height: 44px;
+  box-sizing: border-box;
+  color: #333;
+}
+
+.search-type-select:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 1px 6px rgba(108, 99, 255, 0.2);
 }
 
 .search-button {
-  padding: 8px 20px;
-  background-color: #1a73e8;
+  position: absolute;
+  right: 0;
+  top: 0;
+  background-color: #6c63ff;
   color: white;
   border: none;
-  border-radius: 4px;
+  width: 60px;
+  height: 44px;
+  border-radius: 0 30px 30px 0;
   cursor: pointer;
-  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2; /* Ensure button is above input */
+  box-sizing: border-box;
+}
+
+.search-button svg {
+  font-size: 18px;
+  margin-left: 5px;
 }
 
 .search-button:hover {
-  background-color: #1557b0;
+  background-color: #5a52d5;
 }
 
 /* Add these styles to your existing books.css file */
@@ -309,10 +341,20 @@ html, body {
 }
 
 #sort-select {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 8px 15px;
+  border: 1px solid #e0d2ff;
+  border-radius: 20px;
+  background-color: white;
+  font-size: 14px;
   cursor: pointer;
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+#sort-select:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 1px 6px rgba(108, 99, 255, 0.2);
 }
 
 /* Books grid - adjusted for 5-6 books per row */
@@ -593,5 +635,23 @@ html, body {
 @media (min-width: 1500px) {
   .books-grid {
     grid-template-columns: repeat(6, 1fr); /* Force exactly 6 columns on very large screens */
+  }
+}
+
+@media (min-width: 768px) {
+  .search-container {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .search-input-wrapper {
+    flex: 1;
+  }
+  
+  .search-options {
+    margin-top: 0;
+    width: auto;
+    white-space: nowrap;
   }
 }

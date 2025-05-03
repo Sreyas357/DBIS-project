@@ -14,14 +14,38 @@ const port = 4000;
 // PostgreSQL connection
 // NOTE: use YOUR postgres username and password here
 const pool = new Pool({
-  user: 'postgres',
+  user: 'lokesh8639',
   host: 'localhost',
   database: 'ecommerce',
-  password: '0608',
+  password: 'lokesh@2004',
   port: 5432,
 });
 
 const db = pool;
+
+// Verify database connection and tables exist
+async function checkDatabaseConnection() {
+  try {
+    const client = await pool.connect();
+    console.log('Database connection successful');
+    
+    // Check if users table exists and has data
+    const userCheck = await client.query('SELECT COUNT(*) FROM users');
+    console.log(`Users table exists with ${userCheck.rows[0].count} records`);
+    
+    // Check if follows table exists and has data
+    const followsCheck = await client.query('SELECT COUNT(*) FROM follows');
+    console.log(`Follows table exists with ${followsCheck.rows[0].count} records`);
+    
+    client.release();
+  } catch (err) {
+    console.error('Database connection error:', err);
+    console.error('Please check your database credentials and make sure your schema is properly initialized');
+  }
+}
+
+// Run db check on startup
+checkDatabaseConnection();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
@@ -73,10 +97,20 @@ function generateOTP() {
 
 // Authentication middleware
 function isAuthenticated(req, res, next) {
+  console.log('Authentication check: session userId:', req.session?.userId);
+  
   if (req.session && req.session.userId) {
+    // Add user information to the request object
+    req.user = {
+      user_id: req.session.userId,
+      username: req.session.username
+    };
+    
+    console.log('User authenticated, added user info to request:', req.user);
     // If a session exists, continue to the next route handler
     return next();
   } else {
+    console.log('Authentication failed: No valid session');
     // If no session, respond with a 401 Unauthorized error
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -166,6 +200,11 @@ app.post("/login", async (req, res) => {
     }
 
     const user = result.rows[0];
+    console.log('Login attempt for user:', { 
+      user_id: user.user_id, 
+      username: user.username, 
+      email: user.email 
+    });
 
     // Check if this is a Google user trying to login with password
     if (user.google_id && !user.password_hash) {
@@ -190,6 +229,12 @@ app.post("/login", async (req, res) => {
     // Store the user ID in the session after successful login
     req.session.userId = user.user_id;
     req.session.username = user.username;
+    
+    console.log('User successfully logged in, session data:', {
+      userId: req.session.userId,
+      username: req.session.username,
+      sessionID: req.sessionID
+    });
 
     // Respond with a success message
     return res.status(200).json({ message: "Login successful" });
@@ -201,20 +246,45 @@ app.post("/login", async (req, res) => {
 });
 
 // IsLoggedIn check
-app.get("/isLoggedIn", (req, res) => {
-  if (req.session && req.session.userId) {
-    console.log("User is logged in with session:", {
-      userId: req.session.userId,
-      username: req.session.username
+app.get("/isLoggedIn", async (req, res) => {
+  console.log("isLoggedIn check, session data:", req.session);
+  
+  if (!req.session) {
+    console.log("No session object found");
+    return res.status(400).json({ message: "No session found" });
+  }
+  
+  if (!req.session.userId) {
+    console.log("No userId in session");
+    return res.status(400).json({ message: "User is not logged in" });
+  }
+  
+  try {
+    // Verify user exists in database
+    const userQuery = 'SELECT user_id, username FROM users WHERE user_id = $1';
+    const userResult = await pool.query(userQuery, [req.session.userId]);
+    
+    if (userResult.rows.length === 0) {
+      console.log(`User ID ${req.session.userId} not found in database`);
+      return res.status(404).json({ message: "User not found in database" });
+    }
+    
+    const user = userResult.rows[0];
+    console.log("User is logged in with verified database record:", {
+      userId: user.user_id,
+      username: user.username,
+      sessionID: req.sessionID
     });
+    
     return res.status(200).json({
       message: "User is logged in",
-      username: req.session.username,
-      userId: req.session.userId
+      username: user.username,
+      userId: user.user_id
     });
+  } catch (error) {
+    console.error("Error verifying user in database:", error);
+    return res.status(500).json({ message: "Error checking login status" });
   }
-  console.log("User is not logged in, no valid session found");
-  return res.status(400).json({ message: "User is not logged in" });
 });
 
 // Check auth status (alias for isLoggedIn to maintain compatibility)
@@ -507,6 +577,39 @@ app.get('/user/search', async (req, res) => {
     console.error('Search error:', err);
     return res.status(500).json({ message: 'Internal server error' });
   }
+});
+
+// Get user's friends (users they follow)
+app.get('/user/friends', isAuthenticated, async (req, res) => {
+    try {
+        // Use userId from middleware or session
+        const userId = req.user?.user_id; // Use the userId attached by isAuthenticated
+
+        if (!userId) {
+            console.error('User ID not found in authenticated request');
+            return res.status(401).json({ error: 'User not authenticated' });
+        }
+
+        console.log('Friends API: Fetching friends for user ID:', userId);
+
+        // Get the user's friends
+        const query = `
+            SELECT u.user_id, u.username, u.email
+            FROM users u
+            INNER JOIN follows f ON u.user_id = f.following_id
+            WHERE f.follower_id = $1
+            ORDER BY u.username
+        `;
+        
+        const result = await pool.query(query, [userId]);
+        console.log(`Found ${result.rows.length} friends for user ${userId}`);
+        
+        // Return empty array if no friends found
+        res.json({ friends: result.rows });
+    } catch (error) {
+        console.error('Error in friends API:', error);
+        res.status(500).json({ error: 'Server error while fetching friends' });
+    }
 });
 
 // Get user profile by username
@@ -3562,3 +3665,137 @@ app.get('/api/user/needs-genres', isAuthenticated, async (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+// Book status endpoints
+
+// Get all book statuses for the logged in user
+app.get('/user/book-statuses', isAuthenticated, async (req, res) => {
+    try {
+        // Use session userId as fallback
+        const userId = req.session?.userId;
+        
+        if (!userId) {
+            console.error('No user ID found in request');
+            return res.status(401).json({ error: 'User not authenticated' });
+        }
+        
+        const query = `
+            SELECT status_id, user_id, book_id, status, is_private, created_at, updated_at
+            FROM user_book_status
+            WHERE user_id = $1
+        `;
+        
+        const result = await pool.query(query, [userId]);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching book statuses:', error);
+        res.status(500).json({ error: 'Server error while fetching book statuses' });
+    }
+});
+
+// Get status for a specific book
+app.get('/user/book-status/:book_id', isAuthenticated, async (req, res) => {
+    try {
+        // Use session userId as fallback
+        const userId = req.user?.user_id || req.session.userId;
+        
+        if (!userId) {
+            console.error('No user ID found in request');
+            return res.status(401).json({ error: 'User not authenticated' });
+        }
+        
+        const { book_id } = req.params;
+        
+        const query = `
+            SELECT status_id, user_id, book_id, status, is_private, created_at, updated_at
+            FROM user_book_status
+            WHERE user_id = $1 AND book_id = $2
+        `;
+        
+        const result = await pool.query(query, [userId, book_id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Book status not found' });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error fetching book status:', error);
+        res.status(500).json({ error: 'Server error while fetching book status' });
+    }
+});
+
+// Set or update book status
+app.post('/user/book-status', isAuthenticated, async (req, res) => {
+    try {
+        // Use session userId as fallback
+        const userId = req.user?.user_id || req.session.userId;
+        
+        if (!userId) {
+            console.error('No user ID found in request');
+            return res.status(401).json({ error: 'User not authenticated' });
+        }
+        
+        const { book_id, status, is_private } = req.body;
+        
+        if (!book_id || !status) {
+            return res.status(400).json({ error: 'Book ID and status are required' });
+        }
+        
+        // Check if status value is valid
+        const validStatuses = ['plan_to_read', 'reading', 'completed', 'on_hold', 'dropped'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ error: 'Invalid status value' });
+        }
+        
+        // Check if book exists
+        const bookQuery = 'SELECT id FROM books WHERE id = $1';
+        const bookResult = await pool.query(bookQuery, [book_id]);
+        
+        if (bookResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Book not found' });
+        }
+        
+        // Check if status entry already exists
+        const checkQuery = 'SELECT status_id FROM user_book_status WHERE user_id = $1 AND book_id = $2';
+        const checkResult = await pool.query(checkQuery, [userId, book_id]);
+        
+        const now = new Date();
+        
+        if (checkResult.rows.length === 0) {
+            // Insert new status
+            const insertQuery = `
+                INSERT INTO user_book_status (user_id, book_id, status, is_private, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING status_id, status, is_private
+            `;
+            
+            const insertResult = await pool.query(
+                insertQuery, 
+                [userId, book_id, status, is_private, now, now]
+            );
+            
+            res.status(201).json(insertResult.rows[0]);
+        } else {
+            // Update existing status
+            const updateQuery = `
+                UPDATE user_book_status
+                SET status = $1, is_private = $2, updated_at = $3
+                WHERE user_id = $4 AND book_id = $5
+                RETURNING status_id, status, is_private
+            `;
+            
+            const updateResult = await pool.query(
+                updateQuery,
+                [status, is_private, now, userId, book_id]
+            );
+            
+            res.json(updateResult.rows[0]);
+        }
+    } catch (error) {
+        console.error('Error updating book status:', error);
+        res.status(500).json({ error: 'Server error while updating book status' });
+    }
+});
+
+

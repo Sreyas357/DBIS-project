@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../css/search-bar.css';
+// You can import Font Awesome
+// import { FaSearch } from 'react-icons/fa';
 
-const SearchBar = ({ onSearch, categoryId }) => {
+const SearchBar = ({ onSearch, categoryId, filter, onFilterChange }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -115,29 +117,52 @@ const SearchBar = ({ onSearch, categoryId }) => {
     }
   };
   
+  const handleFilterChange = (e) => {
+    if (onFilterChange) {
+      onFilterChange(e.target.value);
+    }
+  };
+  
   return (
     <div className="search-bar-container" ref={searchRef}>
-      <form onSubmit={handleSearch} className="search-form">
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder="Search threads, authors, books..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onFocus={() => {
-            if (query.trim().length >= 2 && results.length > 0) {
-              setShowDropdown(true);
-            }
-          }}
-          className="search-input"
-          autoComplete="off"
-        />
-        <button type="submit" className="search-button">
-          <i className="fas fa-search"></i>
-          Search
-        </button>
-      </form>
+      <div className="search-filter-container">
+        <form onSubmit={handleSearch} className="search-form">
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Search..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => {
+              if (query.trim().length >= 2 && results.length > 0) {
+                setShowDropdown(true);
+              }
+            }}
+            className="search-input"
+            autoComplete="off"
+          />
+          <button type="submit" className="search-button">
+            <span className="fa fa-search"></span>
+          </button>
+        </form>
+        
+        {onFilterChange && (
+          <div className="filter-container">
+            <select 
+              className="filter-dropdown"
+              value={filter || 'trending'}
+              onChange={handleFilterChange}
+              style={{ flex: '0 0 160px' }}
+            >
+              <option value="trending">Trending</option>
+              <option value="newest">Newest</option>
+              <option value="most-commented">Most Commented</option>
+              <option value="most-viewed">Most Views</option>
+            </select>
+          </div>
+        )}
+      </div>
       
       {showDropdown && (
         <div className="search-dropdown">

@@ -4,7 +4,7 @@ import { apiUrl } from '../config/config';
 import Navbar from '../components/Navbar';
 import StarRating from '../components/StarRating';
 import '../css/book-details.css';
-import { FaBook, FaArrowLeft, FaUser, FaClock } from 'react-icons/fa';
+import { FaBook, FaArrowLeft, FaUser, FaClock, FaLock, FaGlobeAmericas, FaBookmark, FaBookOpen, FaCheck, FaPause, FaTimesCircle } from 'react-icons/fa';
 
 const BookDetails = () => {
     const { id } = useParams();
@@ -21,6 +21,9 @@ const BookDetails = () => {
     const [commentText, setCommentText] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [isReviewFormVisible, setIsReviewFormVisible] = useState(false);
+    const [readingStatus, setReadingStatus] = useState('plan_to_read');
+    const [isPrivate, setIsPrivate] = useState(false);
+    const [statusUpdating, setStatusUpdating] = useState(false);
     
     // Check login status
     useEffect(() => {
@@ -38,6 +41,31 @@ const BookDetails = () => {
         
         checkLoginStatus();
     }, []);
+
+    // Fetch book status
+    useEffect(() => {
+        const fetchBookStatus = async () => {
+            if (!isLoggedIn || !id) return;
+            
+            try {
+                const response = await fetch(`${apiUrl}/user/book-status/${id}`, {
+                    credentials: "include"
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data) {
+                        setReadingStatus(data.status || 'plan_to_read');
+                        setIsPrivate(data.is_private || false);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching book status:", error);
+            }
+        };
+        
+        fetchBookStatus();
+    }, [id, isLoggedIn]);
 
     const handleRateBook = async (newRating) => {
         try {
@@ -160,6 +188,85 @@ const BookDetails = () => {
             alert("Failed to save comment. Please try again.");
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleStatusChange = async (status) => {
+        if (!isLoggedIn) {
+            alert("Please log in to update reading status");
+            return;
+        }
+        
+        setStatusUpdating(true);
+        setReadingStatus(status);
+        
+        try {
+            const response = await fetch(`${apiUrl}/user/book-status`, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    book_id: id,
+                    status: status,
+                    is_private: isPrivate
+                }),
+            });
+            
+            if (!response.ok) throw new Error('Failed to update reading status');
+            
+        } catch (error) {
+            console.error("Status update error:", error);
+            alert("Failed to update reading status. Please try again.");
+        } finally {
+            setStatusUpdating(false);
+        }
+    };
+
+    const handlePrivacyToggle = async () => {
+        if (!isLoggedIn) {
+            alert("Please log in to update privacy settings");
+            return;
+        }
+        
+        setStatusUpdating(true);
+        const newPrivacy = !isPrivate;
+        setIsPrivate(newPrivacy);
+        
+        try {
+            const response = await fetch(`${apiUrl}/user/book-status`, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    book_id: id,
+                    status: readingStatus,
+                    is_private: newPrivacy
+                }),
+            });
+            
+            if (!response.ok) throw new Error('Failed to update privacy setting');
+            
+        } catch (error) {
+            console.error("Privacy update error:", error);
+            alert("Failed to update privacy setting. Please try again.");
+            setIsPrivate(!newPrivacy); // Revert UI if request failed
+        } finally {
+            setStatusUpdating(false);
+        }
+    };
+
+    const getStatusIcon = (status) => {
+        switch (status) {
+            case 'plan_to_read': return <FaBookmark className="status-icon" />;
+            case 'reading': return <FaBookOpen className="status-icon" />;
+            case 'completed': return <FaCheck className="status-icon" />;
+            case 'on_hold': return <FaPause className="status-icon" />;
+            case 'dropped': return <FaTimesCircle className="status-icon" />;
+            default: return <FaBookmark className="status-icon" />;
         }
     };
 
@@ -388,6 +495,48 @@ const BookDetails = () => {
                                     ) : (
                                         <div className="login-prompt">
                                             Please <a href="/login">log in</a> to leave a review.
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Reading Status Dropdown */}
+                                <div className="reading-status-section">
+                                    <h3>Reading Status</h3>
+                                    {isLoggedIn ? (
+                                        <div className="reading-status-dropdown">
+                                            <select 
+                                                className="status-select"
+                                                value={readingStatus}
+                                                onChange={(e) => handleStatusChange(e.target.value)}
+                                                disabled={statusUpdating}
+                                            >
+                                                <option value="plan_to_read">Plan to Read</option>
+                                                <option value="reading">Currently Reading</option>
+                                                <option value="completed">Completed</option>
+                                                <option value="on_hold">On Hold</option>
+                                                <option value="dropped">Dropped</option>
+                                            </select>
+                                            
+                                            <div className="privacy-toggle">
+                                                <label className="privacy-toggle-switch">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={isPrivate}
+                                                        onChange={handlePrivacyToggle}
+                                                        disabled={statusUpdating}
+                                                    />
+                                                    <span className="privacy-toggle-slider"></span>
+                                                </label>
+                                                {isPrivate ? (
+                                                    <span><FaLock className="privacy-icon" /> Private (Only visible to you)</span>
+                                                ) : (
+                                                    <span><FaGlobeAmericas className="privacy-icon" /> Public (Visible to friends)</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="login-prompt">
+                                            Please <a href="/login">log in</a> to track your reading status.
                                         </div>
                                     )}
                                 </div>

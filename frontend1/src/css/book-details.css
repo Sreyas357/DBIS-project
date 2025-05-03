@@ -440,3 +440,136 @@
   color: #3498db;
   text-decoration: underline;
 }
+
+/* Add reading status dropdown styles */
+.reading-status-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px dashed #eee;
+}
+
+.reading-status-section h3 {
+  color: #2c3e50;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.reading-status-dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.status-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 14px;
+  color: #333;
+  width: 100%;
+  max-width: 250px;
+}
+
+.privacy-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.privacy-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.privacy-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+
+.privacy-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.privacy-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 20px;
+}
+
+.privacy-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .privacy-toggle-slider {
+  background-color: #1abc9c;
+}
+
+input:checked + .privacy-toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.privacy-icon {
+  font-size: 14px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-badge.plan_to_read {
+  background-color: #e5f2ff;
+  color: #0066cc;
+}
+
+.status-badge.reading {
+  background-color: #e6faf4;
+  color: #00aa88;
+}
+
+.status-badge.completed {
+  background-color: #e9f9e6;
+  color: #50b83c;
+}
+
+.status-badge.on_hold {
+  background-color: #fff5e5;
+  color: #ff9900;
+}
+
+.status-badge.dropped {
+  background-color: #ffe5e5;
+  color: #dd5555;
+}
+
+.status-icon {
+  margin-right: 5px;
+  font-size: 0.9rem;
+}

@@ -10,10 +10,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 40px;
+    padding: 10px 20px; /* Reduced horizontal padding */
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     z-index: 1000;
     transition: background-color var(--transition-speed, 0.3s) ease, box-shadow var(--transition-speed, 0.3s) ease;
+    border-radius: 8px; /* Add rounded corners */
+    margin: 10px 15px; /* Add margin around navbar */
+    max-width: calc(100% - 30px); /* Adjust width to account for margin */
+    box-sizing: border-box;
   }
   
   .navbar.dark-mode {
@@ -24,22 +28,36 @@
   /* Ensures content doesn't overlap with navbar */
   body {
     padding-top: 0; /* Removing this as it causes issues with sticky navbar */
-    margin-right: 0px;
+    margin: 0;
     overflow-x: hidden;
+    background-color: var(--bg-color, #f5f7fa); /* Add background color */
   }
   
   /* 📌 Navbar Layout */
   .nav-left, .nav-right {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
+  }
+  
+  .nav-left {
+    margin-right: 10px;
+    flex: 0 0 15%; /* Fixed width for the left section */
+  }
+  
+  .nav-right {
+    margin-left: 10px;
+    flex: 0 0 10%; /* Width for the right section */
+    justify-content: flex-end; /* Push content to the right */
   }
   
   .nav-logo {
-    font-size: 1.5rem;
+    font-size: 1.3rem; /* Slightly smaller font */
     font-weight: bold;
     cursor: pointer;
     color: var(--text-primary, #2c3e50);
     transition: color var(--transition-speed, 0.3s) ease;
+    white-space: nowrap;
   }
   
   .dark-mode .nav-logo {
@@ -48,18 +66,32 @@
   
   .nav-center {
     display: flex;
-    gap: 15px;
+    gap: 4px; /* Further reduced gap between nav items */
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+    overflow-x: auto; /* Allow scrolling if needed */
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+    flex: 1; /* Take up remaining space */
+    position: relative; /* Added for proper dropdown positioning */
+  }
+  
+  .nav-center::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome/Safari/Opera */
   }
   
   .nav-center button {
     background: none;
     border: none;
-    padding: 8px 15px;
-    font-size: 1rem;
+    padding: 6px 10px; /* Slightly increased horizontal padding */
+    font-size: 1rem; /* Slightly larger font */
     cursor: pointer;
     border-radius: 4px;
     color: var(--text-primary, #2c3e50);
     transition: background-color var(--transition-speed, 0.3s) ease, color var(--transition-speed, 0.3s) ease;
+    white-space: nowrap;
+    font-weight: 500; /* Make text slightly bolder */
   }
   
   .nav-center button:hover {
@@ -75,43 +107,228 @@
     background-color: var(--button-secondary-hover, #444444);
   }
   
-  /* 📌 Logout Button */
-  .logout-btn {
-    background-color: var(--button-primary, #7289da);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color var(--transition-speed, 0.3s) ease;
-    margin-left: 10px;
+  /* Profile Dropdown Styles */
+  .profile-dropdown {
+    position: relative;
+    margin-left: 0;
+    z-index: 1002; /* Ensure dropdown is above other elements */
   }
   
-  .logout-btn:hover {
-    background-color: var(--button-primary-hover, #5e77d4);
+  .profile-icon {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0; /* Removed margin */
+    background-color: var(--bg-secondary, #f0f2f5); /* Add background to profile icon */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color, #e4e6eb);
+    transition: all 0.2s ease;
+  }
+  
+  .profile-icon:hover {
+    border-color: var(--accent-color, #7289da);
+    transform: scale(1.05);
+  }
+  
+  .profile-icon i {
+    font-size: 1.8rem;
+    color: var(--text-primary, #2c3e50);
+    transition: color 0.2s ease;
+  }
+  
+  .profile-icon i:hover {
+    color: var(--accent-color, #7289da);
+  }
+  
+  .dark-mode .profile-icon {
+    background-color: var(--bg-secondary, #333333);
+    border-color: var(--border-color, #444444);
+  }
+  
+  .dark-mode .profile-icon i {
+    color: var(--text-primary, #e4e6eb);
+  }
+  
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 200px;
+    background-color: var(--card-bg, #ffffff);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 8px 0;
+    margin-top: 8px;
+    z-index: 1002; /* Higher z-index for dropdown menu */
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    animation: dropdown-appear 0.2s ease;
+    border: 1px solid var(--border-color, #e4e6eb);
+  }
+  
+  @keyframes dropdown-appear {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .dark-mode .dropdown-menu {
+    background-color: var(--card-bg, #2c2c2c);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    border-color: var(--border-color, #444444);
+  }
+  
+  .dropdown-item {
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    color: var(--text-primary, #2c3e50);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 0.9rem;
+  }
+  
+  .dark-mode .dropdown-item {
+    color: var(--text-primary, #e4e6eb);
+  }
+  
+  .dropdown-item:hover {
+    background-color: var(--button-secondary-hover, #f5f6f7);
+  }
+  
+  .dark-mode .dropdown-item:hover {
+    background-color: var(--button-secondary-hover, #3a3a3a);
+  }
+  
+  .dropdown-item i {
+    margin-right: 12px;
+    width: 16px;
+    text-align: center;
+    font-size: 1rem;
+  }
+  
+  .dropdown-divider {
+    height: 1px;
+    background-color: var(--border-color, #e4e6eb);
+    margin: 8px 0;
+  }
+  
+  .dark-mode .dropdown-divider {
+    background-color: var(--border-color, #444444);
+  }
+  
+  .notification-count {
+    background-color: #e74c3c;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    margin-left: auto;
+    font-weight: bold;
+  }
+  
+  .notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    width: 18px; /* Slightly smaller */
+    height: 18px; /* Slightly smaller */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    border: 2px solid white;
+  }
+  
+  .dark-mode .notification-badge {
+    border-color: var(--navbar-bg, #1e1e1e);
   }
   
   /* Mobile responsiveness */
   @media (max-width: 768px) {
     .navbar {
-      padding: 10px 20px;
+      padding: 8px 15px;
+      margin: 8px 10px;
+      max-width: calc(100% - 20px);
     }
     
-    .nav-center {
-      display: none; /* Hide on mobile, add a mobile menu toggle if needed */
+    .nav-center button {
+      padding: 5px 8px;
+      font-size: 0.9rem;
     }
     
     .nav-logo {
-      font-size: 1.2rem;
+      font-size: 1.1rem;
+    }
+    
+    .profile-icon {
+      width: 36px;
+      height: 36px;
+    }
+    
+    .profile-icon i {
+      font-size: 1.6rem;
+    }
+    
+    .dropdown-menu {
+      width: 180px;
+    }
+  }
+  
+  /* For very small screens */
+  @media (max-width: 480px) {
+    .navbar {
+      margin: 5px 8px;
+      max-width: calc(100% - 16px);
+      padding: 6px 12px;
+    }
+    
+    .nav-center {
+      gap: 2px;
+    }
+    
+    .nav-center button {
+      padding: 4px 6px;
+      font-size: 0.85rem;
+    }
+    
+    .profile-icon {
+      width: 32px;
+      height: 32px;
+    }
+    
+    .profile-icon i {
+      font-size: 1.4rem;
+    }
+    
+    .dropdown-menu {
+      width: 160px;
+      right: -10px;
+    }
+    
+    .dropdown-item {
+      padding: 8px 12px;
+      font-size: 0.85rem;
     }
   }
   
   .notification-icon {
     position: relative;
-    margin-right: 15px;
+    margin-right: 6px; /* Further reduced margin */
     cursor: pointer;
-    font-size: 1.5rem;
+    font-size: 1.3rem; /* Slightly smaller */
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -133,12 +350,12 @@
     background-color: #e74c3c;
     color: white;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 18px; /* Slightly smaller */
+    height: 18px; /* Slightly smaller */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: bold;
   }
   

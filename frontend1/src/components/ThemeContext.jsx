@@ -16,8 +16,10 @@ export const ThemeProvider = ({ children }) => {
     // Apply dark mode class to body
     if (savedDarkMode) {
       document.body.classList.add('dark-mode');
+      document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.body.classList.remove('dark-mode');
+      document.documentElement.setAttribute('data-theme', 'light');
     }
   }, []);
   
@@ -28,8 +30,10 @@ export const ThemeProvider = ({ children }) => {
     
     if (newMode) {
       document.body.classList.add('dark-mode');
+      document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.body.classList.remove('dark-mode');
+      document.documentElement.setAttribute('data-theme', 'light');
     }
   };
   

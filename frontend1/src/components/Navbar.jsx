@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import "../css/navbar.css"; // Import CSS file
 import { ThemeContext } from "./ThemeContext";
@@ -7,12 +7,27 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useContext(ThemeContext);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     fetchUnreadCount();
     // Set up polling to check for new notifications every minute
     const interval = setInterval(fetchUnreadCount, 60000);
-    return () => clearInterval(interval);
+    
+    // Add click event listener to close dropdown when clicking outside
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const fetchUnreadCount = async () => {
@@ -49,6 +64,10 @@ const Navbar = () => {
     }
   };
 
+  const toggleDropdown = () => {
+    setShowDropdown(!showDropdown);
+  };
+
   return (
     <nav className={`navbar ${isDarkMode ? 'dark-mode' : ''}`}>
       <div className="nav-left">
@@ -60,17 +79,38 @@ const Navbar = () => {
         <button onClick={() => navigate("/books")}>Books</button>
         <button onClick={() => navigate("/threads")}>Discussions</button>
         <button onClick={() => navigate("/groups")}>Groups</button>
-        <button onClick={() => navigate("/profile")}>Profile</button>
         <button onClick={() => navigate("/messages")}>Messages</button>
-        <button onClick={() => navigate("/temp")}> Temp </button>
       </div>
 
       <div className="nav-right">
-        <div className="notification-icon" onClick={() => navigate("/notifications")}>
-          <i className="fa fa-bell"></i>
-          {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+        <div className="profile-dropdown" ref={dropdownRef}>
+          <div className="profile-icon" onClick={toggleDropdown}>
+            <i className="fa fa-user-circle"></i>
+            {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+          </div>
+          
+          {showDropdown && (
+            <div className="dropdown-menu">
+              <div className="dropdown-item" onClick={() => {
+                navigate("/profile");
+                setShowDropdown(false);
+              }}>
+                <i className="fa fa-user"></i> Profile
+              </div>
+              <div className="dropdown-item" onClick={() => {
+                navigate("/notifications");
+                setShowDropdown(false);
+              }}>
+                <i className="fa fa-bell"></i> Notifications
+                {unreadCount > 0 && <span className="notification-count">{unreadCount}</span>}
+              </div>
+              <div className="dropdown-divider"></div>
+              <div className="dropdown-item" onClick={handleLogout}>
+                <i className="fa fa-sign-out"></i> Logout
+              </div>
+            </div>
+          )}
         </div>
-        <button className="logout-btn" onClick={handleLogout}>Logout</button>
       </div>
     </nav>
   );
