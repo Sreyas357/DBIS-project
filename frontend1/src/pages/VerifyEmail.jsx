@@ -124,13 +124,31 @@ const VerifyEmail = () => {
         console.log("Signup result:", signupResult);
 
         if (signupResponse.ok) {
-          setSuccessMessage("Account created successfully! Redirecting to dashboard...");
+          setSuccessMessage("Account created successfully! Redirecting to select your interests...");
           // Show success message briefly before redirect
           setTimeout(() => {
-            navigate("/dashboard");
+            // Navigate to signup page with genres step
+            navigate("/signup", { 
+              state: { 
+                signupStep: 'genres',
+                userId: signupResult.userId || null
+              }
+            });
           }, 2000);
         } else {
-          setErrorMessage(signupResult.message || "Signup failed. Please try again.");
+          // Check if the error is about existing email
+          if (signupResponse.status === 400 && signupResult.message && 
+              (signupResult.message.includes("already registered") || 
+               signupResult.message.includes("Email is already registered"))) {
+            // Redirect to login page with error message
+            navigate("/login", { 
+              state: { 
+                errorMessage: "This email is already registered. Please login instead." 
+              }
+            });
+          } else {
+            setErrorMessage(signupResult.message || "Signup failed. Please try again.");
+          }
         }
       } else {
         setErrorMessage(verifyResult.message || "Invalid OTP. Please try again.");
@@ -247,7 +265,6 @@ const VerifyEmail = () => {
       </div>
     </div>
   );
-
     
 };
 
