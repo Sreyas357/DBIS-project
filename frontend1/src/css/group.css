@@ -242,63 +242,42 @@
   margin-bottom: 2rem;
 }
 
-/* Authentication message */
-.auth-message {
-  padding: 2rem;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  text-align: center;
-  margin-bottom: 2rem;
-  border: 1px solid #eee;
-}
-
-.dark-mode .auth-message {
-  background-color: #2a2a2a;
-  border-color: #444;
-}
-
-.auth-message p {
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-  color: #555;
-}
-
-.dark-mode .auth-message p {
-  color: #ccc;
-}
-
-.login-btn {
-  padding: 0.5rem 1.5rem;
-  background-color: #4285f4;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.login-btn:hover {
-  background-color: #2b6ed9;
-}
-
-.search-container form {
+/* Add a wrapper for the search input if using an icon */
+.search-input-wrapper {
+  position: relative;
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
 }
 
+/* Adjust the search input to fill the container and add left padding for icon */
 .search-input {
   flex: 1;
-  padding: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem; /* left padding for icon */
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
+  box-sizing: border-box;
 }
 
 .dark-mode .search-input {
   background-color: #333;
   border-color: #444;
   color: #e0e0e0;
+}
+
+/* Position the search icon inside the input */
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: #777;
+  pointer-events: none;
+  font-size: 1.2em;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  z-index: 2;
 }
 
 .search-btn {
@@ -701,4 +680,4 @@
 .submit-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
-} 
+}

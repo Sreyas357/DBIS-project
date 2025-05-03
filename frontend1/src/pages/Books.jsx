@@ -359,7 +359,9 @@ const Books = () => {
                             pagecount: volumeInfo.pageCount || null, // lowercase count
                             publisher: volumeInfo.publisher || "Unknown",
                             previewlink: volumeInfo.previewLink || null, // lowercase link
-                            genres: volumeInfo.categories || []
+                            genres: volumeInfo.categories || [],
+                            isbn: volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_13')?.identifier || 
+                                  volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_10')?.identifier || null
                         })
                     });
 

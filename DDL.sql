@@ -35,7 +35,7 @@ CREATE TABLE books (
     author VARCHAR(255) NOT NULL,
     description TEXT CHECK (LENGTH(description) <= 20000),
     coverurl TEXT,
-    publishedyear VARCHAR(4) CHECK (publishedyear ~ '^[0-9]{4}$' OR publishedyear = 'Unknown'),
+    publishedyear VARCHAR(7) CHECK (publishedyear ~ '^[0-9]{4}$' OR publishedyear = 'Unknown'),
     pagecount INTEGER,
     publisher VARCHAR(255),
     previewlink TEXT,
@@ -43,7 +43,8 @@ CREATE TABLE books (
     num_reviews INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    avg_rating DECIMAL(3,2) DEFAULT 0 CHECK (avg_rating >= 0 AND avg_rating <= 5)
+    avg_rating DECIMAL(3,2) DEFAULT 0 CHECK (avg_rating >= 0 AND avg_rating <= 5),
+    isbn VARCHAR(14) DEFAULT 0
 );
 
 -- Genres table

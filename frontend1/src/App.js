@@ -1,5 +1,5 @@
 // App.js
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom"; 
+import { Routes, Route, useLocation } from "react-router-dom"; 
 import Signup from "./pages/Signup";
 import Home from "./pages/Home";
 import Login from "./pages/Login";

@@ -1842,34 +1842,35 @@ app.post('/books/:id/comment', isAuthenticated, async (req, res) => {
   }
 });
 
-// Add a new book with improved validation and error handling
-app.post('/api/add-book', isAuthenticated, async (req, res) => {
+async function add_book(book){
   const client = await pool.connect();
+  
   try {
     const {
-      title,
-      author,
-      description,
-      coverurl,
-      publishedyear,
-      pagecount,
-      publisher,
-      previewlink,
-      genres // Array of genre names
-    } = req.body;
+      title: title,
+      author: author,
+      description : description,
+      coverUrl : coverurl,
+      publishedYear : publishedyear,
+      pageCount : pagecount,
+      publisher: publisher,
+      previewLink: previewlink,
+      categories: genres, // Array of genre names
+      isbn: isbn
+    } = book;
 
-    console.log('Received book data:', {
-      title, author, publishedyear, genres: genres?.length || 0
-    });
+    // console.log('Received book data:', {
+    //   title, author, publishedyear, genres: genres?.length || 0,isbn,genres
+    // });
 
     // Validate required fields
     if (!title || !author) {
-      return res.status(400).json({ error: 'Title and author are required' });
+      console.error( 'Title and author are required' );
     }
 
     // Validate publishedyear format if provided
     if (publishedyear && publishedyear !== 'Unknown' && !/^\d{4}$/.test(publishedyear)) {
-      return res.status(400).json({ error: 'Published year must be a 4-digit number or "Unknown"' });
+     console.error( 'Published year must be a 4-digit number or "Unknown"' );
     }
     
     // Check if book already exists to avoid duplicates
@@ -1879,10 +1880,8 @@ app.post('/api/add-book', isAuthenticated, async (req, res) => {
     );
     
     if (existingBook.rows.length > 0) {
-      return res.status(400).json({ 
-        error: 'Book already exists',
-        bookId: existingBook.rows[0].id
-      });
+      console.error('book already exisits');
+      return [existingBook.rows[0], [], []];
     }
 
     await client.query('BEGIN');
@@ -1890,8 +1889,8 @@ app.post('/api/add-book', isAuthenticated, async (req, res) => {
     // Insert the book
     const insertBookQuery = `
       INSERT INTO books 
-      (title, author, description, coverurl, publishedyear, pagecount, publisher, previewlink, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      (title, author, description, coverurl, publishedyear, pagecount, publisher, previewlink,isbn, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8,$9, NOW(), NOW())
       RETURNING *
     `;
 
@@ -1903,7 +1902,8 @@ app.post('/api/add-book', isAuthenticated, async (req, res) => {
       publishedyear || 'Unknown',
       pagecount || null,
       publisher || null,
-      previewlink || null
+      previewlink || null,
+      isbn
     ]);
 
     const newBook = bookResult.rows[0];
@@ -1963,20 +1963,288 @@ app.post('/api/add-book', isAuthenticated, async (req, res) => {
     console.log(`Successfully added book: "${title}" by ${author}`);
 
     // Return the created book with all needed data
-    res.status(201).json({
-      book: newBook,
-      newGenres: addedGenres,
-      newBookGenreRelations: bookGenreRelations
-    });
+    
+    return [newBook,addedGenres,bookGenreRelations];
 
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error adding book:', error);
-    res.status(500).json({ error: 'Failed to add book', details: error.message });
+    throw error ; 
   } finally {
     client.release();
   }
+}
+
+// Add a new book with improved validation and error handling
+app.post('/api/add-book', isAuthenticated, async (req, res) => {
+  let [newBook,addedGenres,bookGenreRelations] = await add_book(req.body);
+
+  res.status(201).json({
+    book: newBook,
+    newGenres: addedGenres,
+    newBookGenreRelations: bookGenreRelations
+  });
 });
+
+
+async function fetchBookDetailsByTitleAndAuthor(title, author) {
+  try {
+    // Encode title and author for URL
+    const encodedTitle = encodeURIComponent(title.trim());
+    const encodedAuthor = encodeURIComponent(author.trim());
+    
+    // Google Books API URL with intitle and inauthor parameters
+    const url = `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodedTitle}+inauthor:${encodedAuthor}&maxResults=1`;
+    console.log(`Searching for book: ${url}`);
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Google Books API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Check if books were found
+    if (!data.items || data.items.length === 0) {
+      console.log(`No books found for title: "${title}" by ${author}`);
+      return null;
+    }
+    
+    // Get the first result (most relevant)
+    const bookData = data.items[0].volumeInfo;
+    const industryIdentifiers = bookData.industryIdentifiers || [];
+    
+    // Try to find ISBN-13 first, then ISBN-10, or use null if none exists
+    const isbn13 = industryIdentifiers.find(id => id.type === 'ISBN_13');
+    const isbn10 = industryIdentifiers.find(id => id.type === 'ISBN_10');
+    const isbn = (isbn13 ? isbn13.identifier : (isbn10 ? isbn10.identifier : null));
+
+    // Extract and return relevant data
+    return {
+      title: bookData.title,
+      author: bookData.authors ? bookData.authors.join(', ') : author,
+      description: bookData.description || '',
+      coverUrl: bookData.imageLinks?.thumbnail || null,
+      publishedYear: bookData.publishedDate ? bookData.publishedDate.substring(0, 4) : 'Unknown',
+      pageCount: bookData.pageCount || null,
+      publisher: bookData.publisher || null,
+      previewLink: bookData.previewLink || null,
+      categories: bookData.categories || [],
+      isbn: isbn
+    };
+  } catch (error) {
+    console.error(`Error fetching book details for "${title}" by ${author}:`, error);
+    return null;
+  }
+}
+
+
+
+// Add this function to your codebase
+async function fetchBookDetailsByISBN(isbn) {
+  try {
+    // Clean ISBN - remove hyphens or spaces if any
+    const cleanISBN = isbn.replace(/[-\s]/g, '');
+
+    
+    // Google Books API URL
+    const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanISBN}`;
+    const response = await fetch(url);
+    
+
+    if (!response.ok) {
+      throw new Error(`Google Books API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Check if books were found
+    if (!data.items || data.items.length === 0) {
+      console.log(`No books found for ISBN: ${isbn}`);
+      return null;
+    }
+    
+    // Get the first result (most relevant)
+    const bookData = data.items[0].volumeInfo;
+
+    // Extract and return relevant data
+    return {
+      title: bookData.title,
+      author: bookData.authors ? bookData.authors.join(', ') : 'Unknown',
+      description: bookData.description || '',
+      coverUrl: bookData.imageLinks?.thumbnail || null,
+      publishedYear: bookData.publishedDate ? bookData.publishedDate.substring(0, 4) : 'Unknown',
+      pageCount: bookData.pageCount || null,
+      publisher: bookData.publisher || null,
+      previewLink: bookData.previewLink || null,
+      categories: bookData.categories || [],
+      isbn: isbn
+    };
+  } catch (error) {
+    console.error(`Error fetching book details for ISBN ${isbn}:`, error);
+    return null;
+  }
+}
+
+const genreToNYTList = {
+  // Fiction categories
+  "fiction": "hardcover-fiction",
+  "nonfiction": "hardcover-nonfiction",
+  
+  // Non-fiction categories
+  "science": "science", // Changed from "science" (invalid)
+  "business": "business-books",
+  
+  "self-help": "advice-how-to-and-miscellaneous",
+  // Special categories
+  "young-adult": "young-adult-hardcover",
+  "children": "childrens-middle-grade-hardcover",
+  "manga": "graphic-books-and-manga",
+  
+};
+
+// NYT Books API for bestsellers
+app.get('/api/books/bestsellers/:listName', async (req, res) => {
+  try {
+    const { listName } = req.params;
+    console.log(`Fetching NYT bestsellers for list: ${listName}`);
+   
+    // Fetch books from NYT API
+    const bestsellers = await fetchNYTBestSellers(listName);
+    
+    // For each bestseller, check if it exists in database, and add if not
+    const processedBooks = await Promise.all(bestsellers.map(async (book) => {
+      if (!book.isbn) {
+        return book; // Skip if no ISBN
+      }
+      
+      // Check if book exists in database by ISBN
+      const existingBookQuery = `
+        SELECT id, title, author, coverurl, avg_rating, num_ratings
+        FROM books 
+        WHERE isbn = $1
+      `;
+      
+      const existingBook = await pool.query(existingBookQuery, [book.isbn]);
+      
+      if (existingBook.rows.length > 0) {
+        // Book exists, return combined data with DB ID
+        console.log(`Book "${book.title}" already exists in DB with ID ${existingBook.rows[0].id}`);
+        return {
+          ...book,
+          id: existingBook.rows[0].id,
+          // coverUrl: existingBook.rows[0].coverurl ,
+        };
+      }
+      
+      let googleBookData = await fetchBookDetailsByISBN(book.isbn);
+
+      if ( !googleBookData){
+        googleBookData = await fetchBookDetailsByTitleAndAuthor(book.title,book.author);
+      }
+
+      if( !googleBookData){
+        return {
+           ...book, // contains coverUrl also
+           id: null,
+        }
+      }
+
+      // console.log(googleBookData)
+      
+      bookResult = await add_book(googleBookData);
+
+      return {
+        ...book,
+        id: bookResult[0].id,
+        // coverUrl: bookResult[0].coverurl,
+      };
+      
+      
+    }));
+    
+    res.json({ books: processedBooks });
+  } catch (error) {
+    console.error('Error processing bestsellers:', error);
+    res.status(500).json({ error: 'Failed to fetch bestsellers' });
+  }
+});
+
+/**
+ * Fetch present top best sellers for a given genre (NYT list name) using NYT Books API.
+ * @param {string} listName - NYT list name (e.g., 'hardcover-fiction', 'hardcover-nonfiction')
+ * @returns {Promise<Array>} - Array of best seller book objects
+ */
+
+// Add this at the top of your file with other global variables
+const bestsellersCache = new Map(); // Cache for bestseller lists
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+// Modified fetchNYTBestSellers function
+async function fetchNYTBestSellers(listName = 'hardcover-fiction') {
+  // Check cache first
+  const cacheKey = listName;
+  const cachedData = bestsellersCache.get(cacheKey);
+  
+  if (cachedData && (Date.now() - cachedData.timestamp < CACHE_DURATION)) {
+    console.log(`Using cached data for ${listName}`);
+    return cachedData.data;
+  }
+  
+  // Continue with existing API call code
+  const apiKey = 'UNZtEJKqEi8PmC5klRwIHQROGgR1B2ec';
+  
+  if (!apiKey) {
+    console.error('NYT API key not available');
+    return [];
+  }
+  
+  const url = `https://api.nytimes.com/svc/books/v3/lists/current/${listName}.json?api-key=${apiKey}`;
+  
+  try {
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.results || !data.results.books) {
+      console.warn(`No best sellers found for list: ${listName}!`);
+      return [];
+    }
+    
+    const books = data.results.books.map(book => ({
+      title: book.title,
+      author: book.author,
+      rank: book.rank,
+      weeksOnList: book.weeks_on_list,
+      amazonUrl: book.amazon_product_url,
+      isbn: book.primary_isbn13 || book.primary_isbn10,
+      coverUrl: book.book_image
+    }));
+    
+    // Store in cache
+    bestsellersCache.set(cacheKey, {
+      timestamp: Date.now(),
+      data: books
+    });
+    
+    return books;
+  } catch (error) {
+    console.error(`Error fetching NYT best sellers for list "${listName}":`, error);
+    
+    // If we have cached data (even if expired), use it as fallback
+    if (cachedData) {
+      console.log(`Using expired cached data for ${listName} due to API error`);
+      return cachedData.data;
+    }
+    
+    return [];
+  }
+}
 
 // Forgot Password - Send OTP
 app.post('/api/auth/forgot-password', async (req, res) => {
@@ -2155,22 +2423,6 @@ app.post('/api/auth/send-verification-email', async (req, res) => {
         });
     }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2679,19 +2931,6 @@ app.get('/api/user/groups', isAuthenticated, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch user groups' });
     }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // ==== NOTIFICATIONS SYSTEM APIs ====
 

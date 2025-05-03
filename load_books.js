@@ -159,9 +159,9 @@ async function insertBooks(books) {
         const resBook = await pool.query(
           `INSERT INTO books(
             title, author, description, coverurl, publishedyear, 
-            pagecount, publisher, avg_rating, num_ratings, num_reviews
+            pagecount, publisher, avg_rating, num_ratings, num_reviews,isbn
           ) 
-          VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+          VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11) 
           RETURNING id`,
           [
             book.title, 
@@ -173,7 +173,8 @@ async function insertBooks(books) {
             book.publisher,
             book.rating === "Not rated" ? 0 : Number(book.rating),
             0, // Initialize num_ratings as 0
-            0  // Initialize num_reviews as 0
+            0,  // Initialize num_reviews as 0
+            book.isbn
           ]
         );
         
