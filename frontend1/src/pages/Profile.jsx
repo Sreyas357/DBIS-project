@@ -4,7 +4,7 @@ import { apiUrl } from '../config/config';
 import Navbar from '../components/Navbar';
 import StarRating from '../components/StarRating';
 import '../css/profile.css';
-import { FaBook, FaTrash, FaPlus, FaHeart, FaUser } from 'react-icons/fa';
+import { FaBook, FaTrash, FaPlus, FaHeart, FaUser, FaTags } from 'react-icons/fa';
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -34,6 +34,15 @@ const Profile = () => {
     const [following, setFollowing] = useState([]);
     const [loadingFollowing, setLoadingFollowing] = useState(false);
 
+    // Genre states
+    const [showGenreEditor, setShowGenreEditor] = useState(false);
+    const [genreError, setGenreError] = useState('');
+    const [loadingGenres, setLoadingGenres] = useState(false);
+    const [allGenres, setAllGenres] = useState([]);
+    const [selectedGenres, setSelectedGenres] = useState([]);
+    const [userGenres, setUserGenres] = useState([]);
+    const [savingGenres, setSavingGenres] = useState(false);
+
     useEffect(() => {
         const fetchProfileData = async () => {
             try {
@@ -58,6 +67,9 @@ const Profile = () => {
                 fetchWishlists();
                 // Fetch following data
                 fetchFollowing();
+                // Fetch genres data
+                fetchGenres();
+                fetchUserGenres();
 
             } catch (error) {
                 setUserData(prev => ({
@@ -116,6 +128,53 @@ const Profile = () => {
     //         console.error('Error unfollowing user:', error);
     //     }
     // };
+
+
+
+const fetchGenres = async () => {
+        try {
+            const response = await fetch(`${apiUrl}/books-data`, {
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setAllGenres(data.genres || []);
+            } else {
+                console.error('Failed to fetch genres');
+            }
+        } catch (error) {
+            console.error('Error fetching genres:', error);
+        }
+    };
+
+    // Fetch user's selected genres
+    const fetchUserGenres = async () => {
+        setLoadingGenres(true);
+        try {
+            const response = await fetch(`${apiUrl}/api/user/genres`, {
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setUserGenres(data);
+                setSelectedGenres(data.map(genre => genre.id));
+            } else {
+                console.error('Failed to fetch user genres');
+            }
+        } catch (error) {
+            console.error('Error fetching user genres:', error);
+        } finally {
+            setLoadingGenres(false);
+        }
+    };
+
+
+
+
+
+
 
     // Fetch user's wishlists
     const fetchWishlists = async () => {
@@ -330,6 +389,53 @@ const Profile = () => {
         // Escape
         else if (e.key === 'Escape') {
             setShowDropdown(false);
+        }
+    };
+
+    // Handle genre selection/deselection
+    const handleToggleGenre = (genreId) => {
+        setSelectedGenres(prev => {
+            if (prev.includes(genreId)) {
+                return prev.filter(id => id !== genreId);
+            } else {
+                return [...prev, genreId];
+            }
+        });
+    };
+
+    // Save selected genres to the server
+    const handleSaveGenres = async () => {
+        setGenreError('');
+        
+        if (selectedGenres.length < 3) {
+            setGenreError('Please select at least 3 genres.');
+            return;
+        }
+
+        setSavingGenres(true);
+        try {
+            const response = await fetch(`${apiUrl}/api/user/genres`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ genres: selectedGenres })
+            });
+
+            if (response.ok) {
+                // Update the user genres list after saving
+                await fetchUserGenres();
+                setShowGenreEditor(false);
+            } else {
+                const errorData = await response.json();
+                setGenreError(errorData.message || 'Failed to save genres.');
+            }
+        } catch (error) {
+            console.error('Error saving genres:', error);
+            setGenreError('An error occurred while saving your genre preferences.');
+        } finally {
+            setSavingGenres(false);
         }
     };
 
@@ -567,35 +673,81 @@ const Profile = () => {
                         )}
                     </div>
 
-                    {/* Quick Links Section */}
-                    <div className="quick-links-section">
+                    {/* Quick Links */}
+                    <div className="profile-section">
                         <h3>Quick Links</h3>
-                        <ul className="quick-links-list">
-                            <li>
-                                <Link to="/books" className="quick-link">
-                                    <FaBook className="quick-link-icon" />
-                                    <span>Browse All Books</span>
-                                </Link>
-                            </li>
-                            {/* <li>
-                                <Link to="/dashboard" className="quick-link">
-                                    <FaHeart className="quick-link-icon" />
-                                    <span>Your Wishlists ({wishlists.length})</span>
-                                </Link>
-                            </li> */}
-                            <li>
-                                <button 
-                                    className="quick-link" 
-                                    onClick={() => setCreatingWishlist(true)}
-                                >
-                                    <FaPlus className="quick-link-icon" />
-                                    <span>Create New Wishlist</span>
-                                </button>
-                            </li>
-                        </ul>
+                        <div className="quick-links">
+                            <Link to="/dashboard" className="quick-link">
+                                <FaBook /> Dashboard
+                            </Link>
+                            <Link to="/messages" className="quick-link">
+                                <FaUser /> Messages
+                            </Link>
+                            <button 
+                                className="quick-link" 
+                                onClick={() => setCreatingWishlist(true)}
+                            >
+                                <FaPlus /> Create New Wishlist
+                            </button>
+                            <button 
+                                className="quick-link" 
+                                onClick={() => setShowGenreEditor(!showGenreEditor)}
+                            >
+                                <FaTags /> Manage Interested Genres
+                            </button>
+                        </div>
+
+                        {/* Genre Editor */}
+                        {showGenreEditor && (
+                            <div className="genre-editor">
+                                <h3>Update Your Genre Interests</h3>
+                                <p>Please select at least 3 genres that you're interested in.</p>
+                                
+                                {genreError && <div className="error-message">{genreError}</div>}
+                                
+                                <div className="genres-container">
+                                    {loadingGenres ? (
+                                        <div className="loading-spinner">Loading genres...</div>
+                                    ) : (
+                                        <div className="genre-grid">
+                                            {allGenres.map(genre => (
+                                                <div 
+                                                    key={genre.id} 
+                                                    className={`genre-item ${selectedGenres.includes(genre.id) ? 'selected' : ''}`}
+                                                    onClick={() => handleToggleGenre(genre.id)}
+                                                >
+                                                    {genre.name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="genre-actions">
+                                    <button 
+                                        onClick={handleSaveGenres} 
+                                        disabled={savingGenres}
+                                        className="primary-button"
+                                    >
+                                        {savingGenres ? 'Saving...' : 'Save Genres'}
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            setShowGenreEditor(false);
+                                            // Reset selected genres to user's current genres
+                                            setSelectedGenres(userGenres.map(genre => genre.id));
+                                        }}
+                                        className="secondary-button"
+                                        disabled={savingGenres}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Wishlist Stats Section */}
+                    {/* Wishlist Stats */}
                     {wishlists.length > 0 && (
                         <div className="wishlist-stats-section">
                             <h3>Your Wishlist Stats</h3>

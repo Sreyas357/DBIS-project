@@ -2032,7 +2032,7 @@ async function fetchBookDetailsByTitleAndAuthor(title, author) {
     
     // Google Books API URL with intitle and inauthor parameters
     const url = `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodedTitle}+inauthor:${encodedAuthor}&maxResults=1`;
-    console.log(`Searching for book: ${url}`);
+    // console.log(`Searching for book: ${url}`);
     
     const response = await fetch(url);
     
@@ -2145,7 +2145,7 @@ const genreToNYTList = {
 app.get('/api/books/bestsellers/:listName', async (req, res) => {
   try {
     const { listName } = req.params;
-    console.log(`Fetching NYT bestsellers for list: ${listName}`);
+    // console.log(`Fetching NYT bestsellers for list: ${listName}`);
    
     // Fetch books from NYT API
     const bestsellers = await fetchNYTBestSellers(listName);
@@ -2167,7 +2167,7 @@ app.get('/api/books/bestsellers/:listName', async (req, res) => {
       
       if (existingBook.rows.length > 0) {
         // Book exists, return combined data with DB ID
-        console.log(`Book "${book.title}" already exists in DB with ID ${existingBook.rows[0].id}`);
+        // console.log(`Book "${book.title}" already exists in DB with ID ${existingBook.rows[0].id}`);
         return {
           ...book,
           id: existingBook.rows[0].id,
@@ -2315,7 +2315,7 @@ async function fetchNYTBestSellers(listName = 'hardcover-fiction') {
       
       // Check if cache is still valid
       if (Date.now() - cachedData.timestamp < CACHE_DURATION) {
-        console.log(`Using file-cached data for ${listName}`);
+        // console.log(`Using file-cached data for ${listName}`);
         return cachedData.data;
       }
     } catch (readError) {
@@ -2365,7 +2365,7 @@ async function fetchNYTBestSellers(listName = 'hardcover-fiction') {
     };
     
     await fs.writeFile(cacheFile, JSON.stringify(cacheData, null, 2), 'utf8');
-    console.log(`Cached bestseller data for ${listName} in file`);
+    //console.log(`Cached bestseller data for ${listName} in file`);
     
     return books;
   } catch (error) {
@@ -3805,4 +3805,161 @@ app.get('/api/user/following', isAuthenticated, async (req, res) => {
         console.error('Error fetching following users:', err);
         res.status(500).json({ error: 'Failed to fetch following users' });
     }
+});
+
+// Get book recommendations based on user's genre interests
+app.get('/api/books/recommendations', isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    
+    // Get user's genre interests from user_genre_interests table
+    const userGenresQuery = `
+      SELECT g.id, g.name 
+      FROM genres g
+      JOIN user_genre_interests ugi ON g.id = ugi.genre_id
+      WHERE ugi.user_id = $1
+    `;
+    
+    const userGenresResult = await pool.query(userGenresQuery, [userId]);
+    
+    if (userGenresResult.rows.length === 0) {
+      console.log(`User ${userId} has no genre interests set`);
+      return res.json({ books: [] });
+    }
+    
+    // Extract genre IDs and log them
+    const genreIds = userGenresResult.rows.map(row => row.id);
+    const genreNames = userGenresResult.rows.map(row => row.name);
+    console.log(`User ${userId} is interested in genres: ${genreNames.join(', ')}`);
+    
+    // Find highly rated books from the user's preferred genres
+    const recommendationsQuery = `
+      SELECT DISTINCT b.id, b.title, b.author, b.coverurl as "coverUrl", 
+             b.avg_rating as "avgRating", b.num_ratings as "numRatings"
+      FROM books b
+      JOIN book_genres bg ON b.id = bg.book_id
+      WHERE bg.genre_id = ANY($1::int[])
+        AND b.avg_rating >= 3.5
+        AND b.num_ratings >= 2
+      ORDER BY 
+        b.avg_rating DESC,
+        b.num_ratings DESC
+      LIMIT 15
+    `;
+    
+    const recommendationsResult = await pool.query(recommendationsQuery, [genreIds]);
+    console.log(`Found ${recommendationsResult.rows.length} recommendations for user ${userId}`);
+    
+    // If we don't have enough recommendations, get more books with lower threshold
+    if (recommendationsResult.rows.length < 10) {
+      console.log(`Not enough recommendations, lowering threshold criteria`);
+      
+      const additionalBooksQuery = `
+        SELECT DISTINCT b.id, b.title, b.author, b.coverurl as "coverUrl", 
+               b.avg_rating as "avgRating", b.num_ratings as "numRatings"
+        FROM books b
+        JOIN book_genres bg ON b.id = bg.book_id
+        WHERE bg.genre_id = ANY($1::int[])
+          AND b.id NOT IN (
+            SELECT id FROM books b2
+            JOIN book_genres bg2 ON b2.id = bg2.book_id
+            WHERE bg2.genre_id = ANY($1::int[])
+              AND b2.avg_rating >= 3.5
+              AND b2.num_ratings >= 2
+          )
+        ORDER BY 
+          b.avg_rating DESC NULLS LAST, 
+          b.num_ratings DESC NULLS LAST
+        LIMIT $2
+      `;
+      
+      const limit = 15 - recommendationsResult.rows.length;
+      const additionalBooksResult = await pool.query(additionalBooksQuery, [genreIds, limit]);
+      
+      console.log(`Found ${additionalBooksResult.rows.length} additional books`);
+      return res.json({ 
+        books: [...recommendationsResult.rows, ...additionalBooksResult.rows]
+      });
+    }
+    
+    return res.json({ books: recommendationsResult.rows });
+    
+  } catch (err) {
+    console.error('Error generating book recommendations:', err);
+    res.status(500).json({ error: 'Failed to fetch book recommendations' });
+  }
+});
+
+// Get book recommendations based on followed users' high ratings
+app.get('/api/books/friend-recommendations', isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    
+    // Get users that the current user follows
+    const followingQuery = `
+      SELECT following_id
+      FROM follows
+      WHERE follower_id = $1
+    `;
+    
+    const followingResult = await pool.query(followingQuery, [userId]);
+    console.log(followingResult.rows);
+
+
+    if (followingResult.rows.length === 0) {
+      console.log(`User ${userId} is not following anyone`);
+      return res.json({ books: [] });
+    }
+    
+    // Extract the IDs of followed users
+    const followingIds = followingResult.rows.map(row => row.following_id);
+    console.log(`User ${userId} is following ${followingIds.length} users: ${followingIds.join(', ')}`);
+    
+    console.log(followingIds);
+
+    // First check if any followed users have rated books
+    const checkRatingsQuery = `
+      SELECT 1 
+      FROM user_book_reviews 
+      WHERE user_id = ANY($1::int[]) 
+        AND rating >= 4
+      LIMIT 1
+    `;
+    
+    const ratingsExist = await pool.query(checkRatingsQuery, [followingIds]);
+    console.log(ratingsExist.rows);
+
+
+    if (ratingsExist.rows.length === 0) {
+      console.log(`No high ratings found from users followed by ${userId}`);
+      return res.json({ books: [] });
+    }
+    
+    // Find books highly rated (4 or 5) by followed users
+    const recommendationsQuery = `
+      SELECT DISTINCT b.id, b.title, b.author, b.coverurl as "coverUrl", 
+             COALESCE(b.avg_rating, 0) as "avgRating", 
+             COALESCE(b.num_ratings, 0) as "numRatings",
+             array_agg(DISTINCT u.username) as "recommendedBy",
+             COUNT(DISTINCT r.user_id) as "recommendCount"
+      FROM books b
+      JOIN user_book_reviews r ON b.id = r.book_id
+      JOIN users u ON r.user_id = u.user_id
+      WHERE r.user_id = ANY($1::int[])
+        AND r.rating >= 4
+      GROUP BY b.id, b.title, b.author, b.coverurl, b.avg_rating, b.num_ratings
+      ORDER BY "recommendCount" DESC, "avgRating" DESC
+      LIMIT 15
+    `;
+    
+    const recommendationsResult = await pool.query(recommendationsQuery, [followingIds]);
+    console.log(`Found ${recommendationsResult.rows.length} friend-recommended books for user ${userId}`);
+    
+    return res.json({ books: recommendationsResult.rows });
+    
+  } catch (err) {
+    console.error('Error generating friend book recommendations:', err);
+    console.error('Error details:', err.stack);
+    res.status(500).json({ error: 'Failed to fetch friend book recommendations' });
+  }
 });

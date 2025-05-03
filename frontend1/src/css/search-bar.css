@@ -7,13 +7,14 @@
 .search-form {
   display: flex;
   width: 100%;
+  gap: 8px;
 }
 
 .search-input {
   flex: 1;
   padding: 12px 16px;
   border: 1px solid #ddd;
-  border-radius: 24px 0 0 24px;
+  border-radius: 24px;
   font-size: 16px;
   outline: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -29,12 +30,13 @@
   color: white;
   border: none;
   padding: 12px 20px;
-  border-radius: 0 24px 24px 0;
+  border-radius: 24px;
   cursor: pointer;
   font-size: 16px;
   display: flex;
   align-items: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  min-width: fit-content;
 }
 
 .search-button i {

@@ -6,10 +6,9 @@ const {Pool} = pg;
 
 // List of popular book genres to fetch
 const BOOK_GENRES = [
-  'fiction', 'mystery', 'romance', 'science_fiction', 'fantasy', 
-  'biography', 'history', 'business', 'self_help', 'thriller',
-  'horror', 'young_adult', 'poetry', 'science', 'philosophy',
-  'cookbooks', 'travel', 'religion', 'art', 'classics'
+  'Fiction', 'mystery', 'romance', 'science_fiction', 
+  'business', 'self_help', 'thriller',
+   'young_adult', 'poetry', 'science'
 ];
 
 // Database connection pool
@@ -259,9 +258,9 @@ async function execute() {
     
     
     // Fetch books from all genres
-    const allBooks = await fetchAllGenreBooks(10); // 10 books per genre
+     const allBooks = await fetchAllGenreBooks(1); // 10 books per genre
     
-    // Insert books into database
+    // // Insert books into database
     await insertBooks(allBooks);
 
     await loadData();

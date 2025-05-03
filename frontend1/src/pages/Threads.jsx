@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ThreadList from '../components/ThreadList';
 import ThreadCategoriesList from '../components/ThreadCategoriesList';
-import SearchBar from '../components/SearchBar';
 import '../css/threads.css';
 
 const Threads = () => {
@@ -13,6 +12,7 @@ const Threads = () => {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [filter, setFilter] = useState('trending'); // trending, newest, most-commented, most-viewed
   const [searchQuery, setSearchQuery] = useState('');
+  const [inputValue, setInputValue] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -22,7 +22,10 @@ const Threads = () => {
     const queryParam = params.get('q');
     const filterParam = params.get('filter');
     
-    if (queryParam) setSearchQuery(queryParam);
+    if (queryParam) {
+      setSearchQuery(queryParam);
+      setInputValue(queryParam);
+    }
     if (filterParam) setFilter(filterParam);
   }, [location.search]);
   
@@ -90,8 +93,14 @@ const Threads = () => {
     setSearchQuery(query);
   };
   
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handleSearch(inputValue);
+  };
+  
   const clearSearch = () => {
     setSearchQuery('');
+    setInputValue('');
   };
   
   const handleSortChange = (e) => {
@@ -111,10 +120,20 @@ const Threads = () => {
         </div>
         <div className="threads-main">
           <div className="search-and-filter-row">
-            <SearchBar 
-              onSearch={handleSearch}
-              categoryId="all"
-            />
+            <div className="search-bar">
+              <form onSubmit={handleSubmit} style={{ display: 'flex', width: '100%' }}>
+                <input
+                  type="text"
+                  placeholder="Search threads..."
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  className="search-input"
+                />
+                <button type="submit" style={{ marginLeft: '8px', padding: '8px 16px', backgroundColor: '#1e88e5', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  Search
+                </button>
+              </form>
+            </div>
           </div>
           
           <div className="thread-actions-bar">

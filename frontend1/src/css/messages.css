@@ -306,22 +306,26 @@
     color: #999;
 }
 
+/* Message input modifications */
 .message-input {
     display: flex;
     padding: 15px 20px;
     border-top: 1px solid #eee;
     background-color: white;
+    align-items: center; /* Added to vertically center the elements */
 }
 
 .message-input input {
     flex: 1;
-    padding: 12px 15px;
+    padding: 14px 18px; /* Increased padding for larger input */
     border: 1px solid #ddd;
     border-radius: 25px;
     margin-right: 10px;
     font-size: 15px;
     background-color: #f5f7fa;
     transition: all 0.3s ease;
+    min-height: 24px; /* Added minimum height */
+    width: calc(100% - 60px); /* Give more space to the input */
 }
 
 .message-input input:focus {
@@ -332,7 +336,7 @@
 }
 
 .message-input button {
-    padding: 10px 20px;
+    padding: 8px 12px; /* Further reduced padding for smaller button */
     background-color: #1976d2;
     color: white;
     border: none;
@@ -340,6 +344,10 @@
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
+    min-width: 50px; /* Reduced minimum width */
+    max-width: 60px; /* Added maximum width */
+    font-size: 14px; /* Slightly smaller font size */
+    flex-shrink: 0; /* Prevent button from shrinking */
 }
 
 .message-input button:hover:not(:disabled) {

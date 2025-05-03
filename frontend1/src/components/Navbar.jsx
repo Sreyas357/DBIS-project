@@ -62,7 +62,7 @@ const Navbar = () => {
         <button onClick={() => navigate("/groups")}>Groups</button>
         <button onClick={() => navigate("/profile")}>Profile</button>
         <button onClick={() => navigate("/messages")}>Messages</button>
-        <button onClick={() => navigate("/temp")}> Temp </button>
+        {/* <button onClick={() => navigate("/temp")}> Temp </button> */}
       </div>
 
       <div className="nav-right">
