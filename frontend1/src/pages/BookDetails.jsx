@@ -4,7 +4,7 @@ import { apiUrl } from '../config/config';
 import Navbar from '../components/Navbar';
 import StarRating from '../components/StarRating';
 import '../css/book-details.css';
-import { FaBook, FaArrowLeft, FaUser, FaClock } from 'react-icons/fa';
+import { FaBook, FaArrowLeft, FaUser, FaClock, FaHeart, FaPlus } from 'react-icons/fa';
 
 const BookDetails = () => {
     const { id } = useParams();
@@ -22,6 +22,13 @@ const BookDetails = () => {
     const [submitting, setSubmitting] = useState(false);
     const [isReviewFormVisible, setIsReviewFormVisible] = useState(false);
     
+    // Wishlist states
+    const [userWishlists, setUserWishlists] = useState([]);
+    const [bookWishlists, setBookWishlists] = useState([]);
+    const [showWishlistDropdown, setShowWishlistDropdown] = useState(false);
+    const [creatingWishlist, setCreatingWishlist] = useState(false);
+    const [newWishlistName, setNewWishlistName] = useState('');
+    
     // Check login status
     useEffect(() => {
         const checkLoginStatus = async () => {
@@ -30,6 +37,12 @@ const BookDetails = () => {
                     credentials: "include"
                 });
                 setIsLoggedIn(response.ok);
+                
+                if (response.ok) {
+                    // If logged in, fetch user's wishlists
+                    fetchUserWishlists();
+                    checkBookInWishlists();
+                }
             } catch (error) {
                 console.error("Login check error:", error);
                 setIsLoggedIn(false);
@@ -38,6 +51,123 @@ const BookDetails = () => {
         
         checkLoginStatus();
     }, []);
+
+    // Fetch user's wishlists
+    const fetchUserWishlists = async () => {
+        try {
+            const response = await fetch(`${apiUrl}/api/wishlists`, {
+                credentials: "include"
+            });
+            
+            if (response.ok) {
+                const wishlists = await response.json();
+                setUserWishlists(wishlists);
+            }
+        } catch (error) {
+            console.error("Error fetching wishlists:", error);
+        }
+    };
+    
+    // Check if book is in any wishlists
+    const checkBookInWishlists = async () => {
+        try {
+            const response = await fetch(`${apiUrl}/api/books/${id}/wishlists`, {
+                credentials: "include"
+            });
+            
+            if (response.ok) {
+                const wishlists = await response.json();
+                setBookWishlists(wishlists);
+            }
+        } catch (error) {
+            console.error("Error checking wishlists:", error);
+        }
+    };
+    
+    // Add book to wishlist
+    const addToWishlist = async (wishlistId) => {
+        try {
+            const response = await fetch(`${apiUrl}/api/wishlists/${wishlistId}/books`, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ bookId: id })
+            });
+            
+            if (response.ok) {
+                // Update lists of wishlists containing this book
+                checkBookInWishlists();
+                setShowWishlistDropdown(false);
+            }
+        } catch (error) {
+            console.error("Error adding to wishlist:", error);
+        }
+    };
+    
+    // Remove book from wishlist
+    const removeFromWishlist = async (wishlistId) => {
+        try {
+            const response = await fetch(`${apiUrl}/api/wishlists/${wishlistId}/books/${id}`, {
+                method: "DELETE",
+                credentials: "include"
+            });
+            
+            if (response.ok) {
+                // Update lists of wishlists containing this book
+                checkBookInWishlists();
+            }
+        } catch (error) {
+            console.error("Error removing from wishlist:", error);
+        }
+    };
+    
+    // Create new wishlist and add book
+    const createWishlist = async () => {
+        if (!newWishlistName.trim()) return;
+        
+        try {
+            setSubmitting(true);
+            
+            // Create new wishlist
+            const createResponse = await fetch(`${apiUrl}/api/wishlists`, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ name: newWishlistName.trim() })
+            });
+            
+            if (createResponse.ok) {
+                const newWishlist = await createResponse.json();
+                
+                // Add book to the new wishlist
+                await fetch(`${apiUrl}/api/wishlists/${newWishlist.wishlist_id}/books`, {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ bookId: id })
+                });
+                
+                // Update lists
+                await fetchUserWishlists();
+                await checkBookInWishlists();
+                
+                // Reset form
+                setNewWishlistName('');
+                setCreatingWishlist(false);
+                setShowWishlistDropdown(false);
+            }
+        } catch (error) {
+            console.error("Error creating wishlist:", error);
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     const handleRateBook = async (newRating) => {
         try {
@@ -353,6 +483,97 @@ const BookDetails = () => {
                                         onRate={handleRateBook}
                                     />
                                 </div>
+
+                                {/* Wishlist section */}
+                                {isLoggedIn && (
+                                    <div className="wishlist-section">
+                                        <div className="wishlist-dropdown-container">
+                                            <button 
+                                                className="wishlist-button"
+                                                onClick={() => setShowWishlistDropdown(!showWishlistDropdown)}
+                                            >
+                                                <FaHeart /> {bookWishlists.length > 0 ? 'In Wishlist' : 'Add to Wishlist'}
+                                            </button>
+                                            
+                                            {showWishlistDropdown && (
+                                                <div className="wishlist-dropdown">
+                                                    <h4>Add to Wishlist</h4>
+                                                    
+                                                    {/* List of user's wishlists */}
+                                                    {userWishlists.length > 0 ? (
+                                                        <ul className="wishlist-options">
+                                                            {userWishlists.map(wishlist => {
+                                                                const isInWishlist = bookWishlists.some(
+                                                                    bw => bw.wishlist_id === wishlist.wishlist_id
+                                                                );
+                                                                
+                                                                return (
+                                                                    <li key={wishlist.wishlist_id}>
+                                                                        <button 
+                                                                            className={`wishlist-option ${isInWishlist ? 'selected' : ''}`}
+                                                                            onClick={() => isInWishlist 
+                                                                                ? removeFromWishlist(wishlist.wishlist_id)
+                                                                                : addToWishlist(wishlist.wishlist_id)
+                                                                            }
+                                                                        >
+                                                                            {wishlist.name}
+                                                                            {isInWishlist && ' ✓'}
+                                                                        </button>
+                                                                    </li>
+                                                                );
+                                                            })}
+                                                        </ul>
+                                                    ) : (
+                                                        <p className="no-wishlists-message">
+                                                            You don't have any wishlists yet.
+                                                        </p>
+                                                    )}
+                                                    
+                                                    {/* Create new wishlist option */}
+                                                    {creatingWishlist ? (
+                                                        <div className="create-wishlist-form">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Wishlist name"
+                                                                value={newWishlistName}
+                                                                onChange={(e) => setNewWishlistName(e.target.value)}
+                                                                disabled={submitting}
+                                                            />
+                                                            <div className="create-wishlist-actions">
+                                                                <button 
+                                                                    onClick={createWishlist}
+                                                                    disabled={submitting || !newWishlistName.trim()}
+                                                                >
+                                                                    {submitting ? 'Creating...' : 'Create'}
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => setCreatingWishlist(false)}
+                                                                    disabled={submitting}
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <button 
+                                                            className="create-wishlist-button"
+                                                            onClick={() => setCreatingWishlist(true)}
+                                                        >
+                                                            <FaPlus /> Create New Wishlist
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Display which wishlists this book is in */}
+                                        {bookWishlists.length > 0 && (
+                                            <div className="book-wishlists">
+                                                <p>In wishlists: {bookWishlists.map(w => w.name).join(', ')}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div className="user-comment-form">
                                     <h3>Your Review</h3>

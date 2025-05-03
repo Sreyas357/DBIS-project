@@ -3558,7 +3558,251 @@ app.get('/api/user/needs-genres', isAuthenticated, async (req, res) => {
     }
 });
 
+// ==== WISHLIST SYSTEM APIs ====
+
+// Get user's wishlists
+app.get('/api/wishlists', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        
+        const query = `
+            SELECT w.*, COUNT(wb.book_id) AS book_count
+            FROM wishlists w
+            LEFT JOIN wishlist_books wb ON w.wishlist_id = wb.wishlist_id
+            WHERE w.user_id = $1
+            GROUP BY w.wishlist_id
+            ORDER BY w.created_at DESC
+        `;
+        
+        const result = await pool.query(query, [userId]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching wishlists:', err);
+        res.status(500).json({ error: 'Failed to fetch wishlists' });
+    }
+});
+
+// Create a new wishlist
+app.post('/api/wishlists', isAuthenticated, async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const userId = req.session.userId;
+        
+        if (!name || name.trim() === '') {
+            return res.status(400).json({ error: 'Wishlist name is required' });
+        }
+        
+        const query = `
+            INSERT INTO wishlists (user_id, name, description)
+            VALUES ($1, $2, $3)
+            RETURNING *
+        `;
+        
+        const result = await pool.query(query, [userId, name.trim(), description || null]);
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Error creating wishlist:', err);
+        res.status(500).json({ error: 'Failed to create wishlist' });
+    }
+});
+
+// Get books in a wishlist
+app.get('/api/wishlists/:wishlistId/books', isAuthenticated, async (req, res) => {
+    try {
+        const { wishlistId } = req.params;
+        const userId = req.session.userId;
+        
+        // Verify the wishlist belongs to the user
+        const ownerCheck = await pool.query(
+            'SELECT user_id FROM wishlists WHERE wishlist_id = $1',
+            [wishlistId]
+        );
+        
+        if (ownerCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Wishlist not found' });
+        }
+        
+        if (ownerCheck.rows[0].user_id !== userId) {
+            return res.status(403).json({ error: 'You do not have permission to view this wishlist' });
+        }
+        
+        const query = `
+            SELECT b.*, wb.added_at
+            FROM books b
+            JOIN wishlist_books wb ON b.id = wb.book_id
+            WHERE wb.wishlist_id = $1
+            ORDER BY wb.added_at DESC
+        `;
+        
+        const result = await pool.query(query, [wishlistId]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching wishlist books:', err);
+        res.status(500).json({ error: 'Failed to fetch wishlist books' });
+    }
+});
+
+// Add a book to a wishlist
+app.post('/api/wishlists/:wishlistId/books', isAuthenticated, async (req, res) => {
+    try {
+        const { wishlistId } = req.params;
+        const { bookId } = req.body;
+        const userId = req.session.userId;
+        
+        if (!bookId) {
+            return res.status(400).json({ error: 'Book ID is required' });
+        }
+        
+        // Verify the wishlist belongs to the user
+        const ownerCheck = await pool.query(
+            'SELECT user_id FROM wishlists WHERE wishlist_id = $1',
+            [wishlistId]
+        );
+        
+        if (ownerCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Wishlist not found' });
+        }
+        
+        if (ownerCheck.rows[0].user_id !== userId) {
+            return res.status(403).json({ error: 'You do not have permission to modify this wishlist' });
+        }
+        
+        // Check if book exists
+        const bookCheck = await pool.query('SELECT id FROM books WHERE id = $1', [bookId]);
+        
+        if (bookCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Book not found' });
+        }
+        
+        // Check if book is already in the wishlist
+        const existCheck = await pool.query(
+            'SELECT 1 FROM wishlist_books WHERE wishlist_id = $1 AND book_id = $2',
+            [wishlistId, bookId]
+        );
+        
+        if (existCheck.rows.length > 0) {
+            return res.json({ message: 'Book is already in this wishlist' });
+        }
+        
+        // Add book to wishlist
+        await pool.query(
+            'INSERT INTO wishlist_books (wishlist_id, book_id) VALUES ($1, $2)',
+            [wishlistId, bookId]
+        );
+        
+        res.status(201).json({ message: 'Book added to wishlist successfully' });
+    } catch (err) {
+        console.error('Error adding book to wishlist:', err);
+        res.status(500).json({ error: 'Failed to add book to wishlist' });
+    }
+});
+
+// Remove a book from a wishlist
+app.delete('/api/wishlists/:wishlistId/books/:bookId', isAuthenticated, async (req, res) => {
+    try {
+        const { wishlistId, bookId } = req.params;
+        const userId = req.session.userId;
+        
+        // Verify the wishlist belongs to the user
+        const ownerCheck = await pool.query(
+            'SELECT user_id FROM wishlists WHERE wishlist_id = $1',
+            [wishlistId]
+        );
+        
+        if (ownerCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Wishlist not found' });
+        }
+        
+        if (ownerCheck.rows[0].user_id !== userId) {
+            return res.status(403).json({ error: 'You do not have permission to modify this wishlist' });
+        }
+        
+        // Remove book from wishlist
+        await pool.query(
+            'DELETE FROM wishlist_books WHERE wishlist_id = $1 AND book_id = $2',
+            [wishlistId, bookId]
+        );
+        
+        res.json({ message: 'Book removed from wishlist successfully' });
+    } catch (err) {
+        console.error('Error removing book from wishlist:', err);
+        res.status(500).json({ error: 'Failed to remove book from wishlist' });
+    }
+});
+
+// Delete a wishlist
+app.delete('/api/wishlists/:wishlistId', isAuthenticated, async (req, res) => {
+    try {
+        const { wishlistId } = req.params;
+        const userId = req.session.userId;
+        
+        // Verify the wishlist belongs to the user
+        const ownerCheck = await pool.query(
+            'SELECT user_id FROM wishlists WHERE wishlist_id = $1',
+            [wishlistId]
+        );
+        
+        if (ownerCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Wishlist not found' });
+        }
+        
+        if (ownerCheck.rows[0].user_id !== userId) {
+            return res.status(403).json({ error: 'You do not have permission to delete this wishlist' });
+        }
+        
+        // Delete wishlist (will cascade to wishlist_books due to ON DELETE CASCADE)
+        await pool.query('DELETE FROM wishlists WHERE wishlist_id = $1', [wishlistId]);
+        
+        res.json({ message: 'Wishlist deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting wishlist:', err);
+        res.status(500).json({ error: 'Failed to delete wishlist' });
+    }
+});
+
+// Check if a book is in any of user's wishlists
+app.get('/api/books/:bookId/wishlists', isAuthenticated, async (req, res) => {
+    try {
+        const { bookId } = req.params;
+        const userId = req.session.userId;
+        
+        const query = `
+            SELECT w.wishlist_id, w.name
+            FROM wishlists w
+            JOIN wishlist_books wb ON w.wishlist_id = wb.wishlist_id
+            WHERE w.user_id = $1 AND wb.book_id = $2
+        `;
+        
+        const result = await pool.query(query, [userId, bookId]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error checking wishlists for book:', err);
+        res.status(500).json({ error: 'Failed to check wishlists' });
+    }
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+});
+
+// Get users that the current user is following
+app.get('/api/user/following', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        
+        const query = `
+            SELECT u.user_id, u.username
+            FROM follows f
+            JOIN users u ON f.following_id = u.user_id
+            WHERE f.follower_id = $1
+            ORDER BY f.followed_at DESC
+        `;
+        
+        const result = await pool.query(query, [userId]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching following users:', err);
+        res.status(500).json({ error: 'Failed to fetch following users' });
+    }
 });

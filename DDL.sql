@@ -267,4 +267,31 @@ CREATE TABLE user_genre_interests (
 
 -- Create index for faster user genre interest lookups
 CREATE INDEX idx_user_genre_interests_user_id ON user_genre_interests(user_id);
-CREATE INDEX idx_user_genre_interests_genre_id ON user_genre_interests(genre_id); 
+CREATE INDEX idx_user_genre_interests_genre_id ON user_genre_interests(genre_id);
+
+-- Drop wishlist tables if they exist
+DROP TABLE IF EXISTS wishlist_books CASCADE;
+DROP TABLE IF EXISTS wishlists CASCADE;
+
+-- Wishlists table to store user's wishlists
+CREATE TABLE wishlists (
+    wishlist_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Junction table for books in wishlists
+CREATE TABLE wishlist_books (
+    wishlist_id INTEGER NOT NULL REFERENCES wishlists(wishlist_id) ON DELETE CASCADE,
+    book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (wishlist_id, book_id)
+);
+
+-- Create index for faster wishlist lookups
+CREATE INDEX idx_wishlists_user_id ON wishlists(user_id);
+CREATE INDEX idx_wishlist_books_wishlist_id ON wishlist_books(wishlist_id);
+CREATE INDEX idx_wishlist_books_book_id ON wishlist_books(book_id); 
