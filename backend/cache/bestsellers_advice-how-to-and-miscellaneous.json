@@ -1,0 +1,95 @@
+{
+  "timestamp": 1746253834719,
+  "data": [
+    {
+      "title": "THE LET THEM THEORY",
+      "author": "Mel Robbins",
+      "rank": 1,
+      "weeksOnList": 18,
+      "amazonUrl": "https://www.amazon.com/dp/1401971369?tag=thenewyorktim-20",
+      "isbn": "9781401971366",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781401971366.jpg"
+    },
+    {
+      "title": "I WISH SOMEONE HAD TOLD ME ...",
+      "author": "Dana Perino",
+      "rank": 2,
+      "weeksOnList": 1,
+      "amazonUrl": "https://www.amazon.com/dp/0063411474?tag=thenewyorktim-20",
+      "isbn": "9780063411470",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780063411470.jpg"
+    },
+    {
+      "title": "THE BOOK OF ALCHEMY",
+      "author": "Suleika Jaouad",
+      "rank": 3,
+      "weeksOnList": 1,
+      "amazonUrl": "https://www.amazon.com/dp/0593734637?tag=thenewyorktim-20",
+      "isbn": "9780593734636",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780593734636.jpg"
+    },
+    {
+      "title": "ATOMIC HABITS",
+      "author": "James Clear",
+      "rank": 4,
+      "weeksOnList": 283,
+      "amazonUrl": "https://www.amazon.com/Atomic-Habits-Proven-Build-Break/dp/0735211299?tag=thenewyorktim-20",
+      "isbn": "9780735211292",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780735211292.jpg"
+    },
+    {
+      "title": "THE NEXT DAY",
+      "author": "Melinda French Gates",
+      "rank": 5,
+      "weeksOnList": 2,
+      "amazonUrl": "https://www.amazon.com/dp/1250378656?tag=thenewyorktim-20",
+      "isbn": "9781250378651",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781250378651.jpg"
+    },
+    {
+      "title": "DON'T BELIEVE EVERYTHING YOU THINK, EXPANDED EDITION",
+      "author": "Joseph Nguyen",
+      "rank": 6,
+      "weeksOnList": 21,
+      "amazonUrl": "https://www.amazon.com/dp/B0D47VYQMY?tag=thenewyorktim-20",
+      "isbn": "9798893310153",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9798893310153.jpg"
+    },
+    {
+      "title": "HOW TO GIGGLE",
+      "author": "Hannah Berner and Paige DeSorbo",
+      "rank": 7,
+      "weeksOnList": 2,
+      "amazonUrl": "https://www.amazon.com/dp/1668056003?tag=thenewyorktim-20",
+      "isbn": "9781668056004",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781668056004.jpg"
+    },
+    {
+      "title": "CONQUERING CRISIS",
+      "author": "William H. McRaven",
+      "rank": 8,
+      "weeksOnList": 1,
+      "amazonUrl": "https://www.amazon.com/dp/1538771748?tag=thenewyorktim-20",
+      "isbn": "9781538771747",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781538771747.jpg"
+    },
+    {
+      "title": "CHANGE THE RECIPE",
+      "author": "José Andrés with Richard Wolffe",
+      "rank": 9,
+      "weeksOnList": 1,
+      "amazonUrl": "https://www.amazon.com/dp/0063436159?tag=thenewyorktim-20",
+      "isbn": "9780063436152",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780063436152.jpg"
+    },
+    {
+      "title": "THE NEW MENOPAUSE",
+      "author": "Mary Claire Haver",
+      "rank": 10,
+      "weeksOnList": 31,
+      "amazonUrl": "https://www.amazon.com/dp/059379625X?tag=thenewyorktim-20",
+      "isbn": "9780593796252",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780593796252.jpg"
+    }
+  ]
+}

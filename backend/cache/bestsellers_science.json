@@ -1,0 +1,95 @@
+{
+  "timestamp": 1746253834717,
+  "data": [
+    {
+      "title": "SAPIENS",
+      "author": "Yuval Noah Harari",
+      "rank": 1,
+      "weeksOnList": 0,
+      "amazonUrl": "http://www.amazon.com/Sapiens-A-Brief-History-Humankind-ebook/dp/B00ICN066A?tag=thenewyorktim-20",
+      "isbn": "9780062316110",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780062316097.jpg"
+    },
+    {
+      "title": "THE BODY KEEPS THE SCORE",
+      "author": "Bessel van der Kolk",
+      "rank": 2,
+      "weeksOnList": 0,
+      "amazonUrl": "http://www.amazon.com/The-Body-Keeps-Score-Healing/dp/0670785938?tag=thenewyorktim-20",
+      "isbn": "9780143127741",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780670785933.jpg"
+    },
+    {
+      "title": "BEING MORTAL",
+      "author": "Atul Gawande",
+      "rank": 3,
+      "weeksOnList": 0,
+      "amazonUrl": "http://www.amazon.com/Being-Mortal-Medicine-What-Matters/dp/0805095152?tag=thenewyorktim-20",
+      "isbn": "9781250076229",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780805095159.jpg"
+    },
+    {
+      "title": "THINKING, FAST AND SLOW",
+      "author": "Daniel Kahneman",
+      "rank": 4,
+      "weeksOnList": 0,
+      "amazonUrl": "http://www.amazon.com/Thinking-Fast-Slow-Daniel-Kahneman-ebook/dp/B00555X8OA?tag=thenewyorktim-20",
+      "isbn": "9780374533557",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781429969352.jpg"
+    },
+    {
+      "title": "THE MOSQUITO",
+      "author": "Timothy C Winegard",
+      "rank": 5,
+      "weeksOnList": 0,
+      "amazonUrl": "https://www.amazon.com/Mosquito-Human-History-Deadliest-Predator/dp/1524743410?tag=thenewyorktim-20",
+      "isbn": "9781524743413",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781524743413.jpg"
+    },
+    {
+      "title": "THE IMMORTAL LIFE OF HENRIETTA LACKS",
+      "author": "Rebecca Skloot",
+      "rank": 6,
+      "weeksOnList": 0,
+      "amazonUrl": "http://www.amazon.com/The-Immortal-Life-Henrietta-Lacks/dp/1400052181?tag=thenewyorktim-20",
+      "isbn": "9781400052189",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781400052189.jpg"
+    },
+    {
+      "title": "DOPESICK",
+      "author": "Beth Macy",
+      "rank": 7,
+      "weeksOnList": 0,
+      "amazonUrl": "https://www.amazon.com/Dopesick-Dealers-Doctors-Company-Addicted/dp/0316551244?tag=thenewyorktim-20",
+      "isbn": "9780316551304",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780316551243.jpg"
+    },
+    {
+      "title": "WHY WE SLEEP",
+      "author": "Matthew Walker",
+      "rank": 8,
+      "weeksOnList": 0,
+      "amazonUrl": "https://www.amazon.com/Why-We-Sleep-Unlocking-Dreams/dp/1501144316?tag=thenewyorktim-20",
+      "isbn": "9781501144325",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781501144318.jpg"
+    },
+    {
+      "title": "21 LESSONS FOR THE 21ST CENTURY",
+      "author": "Yuval Noah Harari",
+      "rank": 9,
+      "weeksOnList": 0,
+      "amazonUrl": "https://www.amazon.com/Lessons-21st-Century-Yuval-Harari/dp/0525512179?tag=thenewyorktim-20",
+      "isbn": "9780525512196",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780525512172.jpg"
+    },
+    {
+      "title": "QUIET",
+      "author": "Susan Cain",
+      "rank": 10,
+      "weeksOnList": 0,
+      "amazonUrl": "http://www.amazon.com/Quiet-Power-Introverts-World-Talking-ebook/dp/B004J4WNL2?tag=thenewyorktim-20",
+      "isbn": "9780307352156",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780307452207.jpg"
+    }
+  ]
+}

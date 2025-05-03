@@ -1,0 +1,140 @@
+{
+  "timestamp": 1746253834719,
+  "data": [
+    {
+      "title": "GREAT BIG BEAUTIFUL LIFE",
+      "author": "Emily Henry",
+      "rank": 1,
+      "weeksOnList": 1,
+      "amazonUrl": "https://www.amazon.com/dp/059344129X?tag=thenewyorktim-20",
+      "isbn": "9780593441299",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780593441299.jpg"
+    },
+    {
+      "title": "THE PERFECT DIVORCE",
+      "author": "Jeneva Rose",
+      "rank": 2,
+      "weeksOnList": 2,
+      "amazonUrl": "https://www.amazon.com/dp/B0DGY5F5JX?tag=thenewyorktim-20",
+      "isbn": "9798874620936",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9798874620936.jpg"
+    },
+    {
+      "title": "STRANGERS IN TIME",
+      "author": "David Baldacci",
+      "rank": 3,
+      "weeksOnList": 2,
+      "amazonUrl": "https://www.amazon.com/dp/1538742055?tag=thenewyorktim-20",
+      "isbn": "9781538742051",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781538742051.jpg"
+    },
+    {
+      "title": "SAY YOU'LL REMEMBER ME",
+      "author": "Ab Jimenez",
+      "rank": 4,
+      "weeksOnList": 4,
+      "amazonUrl": "https://www.amazon.com/dp/1538759195?tag=thenewyorktim-20",
+      "isbn": "9781538759196",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781538759196.jpg"
+    },
+    {
+      "title": "ONYX STORM",
+      "author": "Rebecca Yarros",
+      "rank": 5,
+      "weeksOnList": 14,
+      "amazonUrl": "https://www.amazon.com/dp/1649374186?tag=thenewyorktim-20",
+      "isbn": "9781649377159",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781649374189.jpg"
+    },
+    {
+      "title": "IRON FLAME",
+      "author": "Rebecca Yarros",
+      "rank": 6,
+      "weeksOnList": 77,
+      "amazonUrl": "https://www.amazon.com/dp/1649374178?tag=thenewyorktim-20",
+      "isbn": "9781649374172",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781649374172.jpg"
+    },
+    {
+      "title": "BROKEN COUNTRY",
+      "author": "Clare Leslie Hall",
+      "rank": 7,
+      "weeksOnList": 8,
+      "amazonUrl": "https://www.amazon.com/dp/166807818X?tag=thenewyorktim-20",
+      "isbn": "9781668078181",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781668078181.jpg"
+    },
+    {
+      "title": "THE WEDDING PEOPLE",
+      "author": "Alison Espach",
+      "rank": 8,
+      "weeksOnList": 26,
+      "amazonUrl": "https://www.amazon.com/dp/1250899575?tag=thenewyorktim-20",
+      "isbn": "9781250899576",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781250899576.jpg"
+    },
+    {
+      "title": "THE WOMEN",
+      "author": "Kristin Hannah",
+      "rank": 9,
+      "weeksOnList": 64,
+      "amazonUrl": "https://www.amazon.com/dp/1250178630?tag=thenewyorktim-20",
+      "isbn": "9781250178633",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781250178633.jpg"
+    },
+    {
+      "title": "JAMES",
+      "author": "Percival Everett",
+      "rank": 10,
+      "weeksOnList": 43,
+      "amazonUrl": "https://www.amazon.com/dp/0385550367?tag=thenewyorktim-20",
+      "isbn": "9780385550369",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780385550369.jpg"
+    },
+    {
+      "title": "THE GOD OF THE WOODS",
+      "author": "Liz Moore",
+      "rank": 11,
+      "weeksOnList": 41,
+      "amazonUrl": "https://www.amazon.com/dp/0593418913?tag=thenewyorktim-20",
+      "isbn": "9780593418918",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780593418918.jpg"
+    },
+    {
+      "title": "SUMMER IN THE CITY",
+      "author": "Alex Aster",
+      "rank": 12,
+      "weeksOnList": 5,
+      "amazonUrl": "https://www.amazon.com/dp/0063411660?tag=thenewyorktim-20",
+      "isbn": "9780063411661",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780063411661.jpg"
+    },
+    {
+      "title": "SHADOW OF THE SOLSTICE",
+      "author": "Anne Hillerman",
+      "rank": 13,
+      "weeksOnList": 1,
+      "amazonUrl": "https://www.amazon.com/dp/0063344858?tag=thenewyorktim-20",
+      "isbn": "9780063344853",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780063344853.jpg"
+    },
+    {
+      "title": "FOURTH WING",
+      "author": "Rebecca Yarros",
+      "rank": 14,
+      "weeksOnList": 94,
+      "amazonUrl": "https://www.amazon.com/dp/1649374046?tag=thenewyorktim-20",
+      "isbn": "9781649374042",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781649374042.jpg"
+    },
+    {
+      "title": "FIREBIRD",
+      "author": "Juliette Cross",
+      "rank": 15,
+      "weeksOnList": 3,
+      "amazonUrl": "https://www.amazon.com/dp/1250339944?tag=thenewyorktim-20",
+      "isbn": "9781250339942",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781250339942.jpg"
+    }
+  ]
+}

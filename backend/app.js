@@ -2214,32 +2214,127 @@ app.get('/api/books/bestsellers/:listName', async (req, res) => {
  * @returns {Promise<Array>} - Array of best seller book objects
  */
 
-// Add this at the top of your file with other global variables
-const bestsellersCache = new Map(); // Cache for bestseller lists
+// // Add this at the top of your file with other global variables
+// const bestsellersCache = new Map(); // Cache for bestseller lists
+// const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+// // Modified fetchNYTBestSellers function
+// async function fetchNYTBestSellers(listName = 'hardcover-fiction') {
+//   // Check cache first
+//   const cacheKey = listName;
+//   const cachedData = bestsellersCache.get(cacheKey);
+  
+//   if (cachedData && (Date.now() - cachedData.timestamp < CACHE_DURATION)) {
+//     console.log(`Using cached data for ${listName}`);
+//     return cachedData.data;
+//   }
+  
+//   // Continue with existing API call code
+//   const apiKey = 'UNZtEJKqEi8PmC5klRwIHQROGgR1B2ec';
+  
+//   if (!apiKey) {
+//     console.error('NYT API key not available');
+//     return [];
+//   }
+  
+//   const url = `https://api.nytimes.com/svc/books/v3/lists/current/${listName}.json?api-key=${apiKey}`;
+  
+//   try {
+//     const response = await fetch(url);
+    
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! Status: ${response.status}`);
+//     }
+    
+//     const data = await response.json();
+    
+//     if (!data.results || !data.results.books) {
+//       console.warn(`No best sellers found for list: ${listName}!`);
+//       return [];
+//     }
+    
+//     const books = data.results.books.map(book => ({
+//       title: book.title,
+//       author: book.author,
+//       rank: book.rank,
+//       weeksOnList: book.weeks_on_list,
+//       amazonUrl: book.amazon_product_url,
+//       isbn: book.primary_isbn13 || book.primary_isbn10,
+//       coverUrl: book.book_image
+//     }));
+    
+//     // Store in cache
+//     bestsellersCache.set(cacheKey, {
+//       timestamp: Date.now(),
+//       data: books
+//     });
+    
+//     return books;
+//   } catch (error) {
+//     console.error(`Error fetching NYT best sellers for list "${listName}":`, error);
+    
+//     // If we have cached data (even if expired), use it as fallback
+//     if (cachedData) {
+//       console.log(`Using expired cached data for ${listName} due to API error`);
+//       return cachedData.data;
+//     }
+    
+//     return [];
+//   }
+// }
+
+const fs = require('fs').promises;
+const path = require('path');
+
+// Create a cache directory if it doesn't exist
+const CACHE_DIR = path.join(__dirname, 'cache');
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
-// Modified fetchNYTBestSellers function
+// Ensure cache directory exists
+async function ensureCacheDir() {
+  try {
+    await fs.mkdir(CACHE_DIR, { recursive: true });
+  } catch (err) {
+    console.error('Error creating cache directory:', err);
+  }
+}
+
+// Modified fetchNYTBestSellers function to use file-based cache
 async function fetchNYTBestSellers(listName = 'hardcover-fiction') {
-  // Check cache first
   const cacheKey = listName;
-  const cachedData = bestsellersCache.get(cacheKey);
-  
-  if (cachedData && (Date.now() - cachedData.timestamp < CACHE_DURATION)) {
-    console.log(`Using cached data for ${listName}`);
-    return cachedData.data;
-  }
-  
-  // Continue with existing API call code
-  const apiKey = 'UNZtEJKqEi8PmC5klRwIHQROGgR1B2ec';
-  
-  if (!apiKey) {
-    console.error('NYT API key not available');
-    return [];
-  }
-  
-  const url = `https://api.nytimes.com/svc/books/v3/lists/current/${listName}.json?api-key=${apiKey}`;
+  const cacheFile = path.join(CACHE_DIR, `bestsellers_${cacheKey}.json`);
   
   try {
+    // Ensure cache directory exists
+    await ensureCacheDir();
+    
+    // Try to read from cache file
+    try {
+      const fileContent = await fs.readFile(cacheFile, 'utf8');
+      const cachedData = JSON.parse(fileContent);
+      
+      // Check if cache is still valid
+      if (Date.now() - cachedData.timestamp < CACHE_DURATION) {
+        console.log(`Using file-cached data for ${listName}`);
+        return cachedData.data;
+      }
+    } catch (readError) {
+      // File doesn't exist or is invalid, which is fine
+      if (readError.code !== 'ENOENT') {
+        console.error(`Cache read error for ${listName}:`, readError);
+      }
+    }
+    
+    // Continue with existing API call code
+    const apiKey = 'UNZtEJKqEi8PmC5klRwIHQROGgR1B2ec';
+    
+    if (!apiKey) {
+      console.error('NYT API key not available');
+      return [];
+    }
+    
+    const url = `https://api.nytimes.com/svc/books/v3/lists/current/${listName}.json?api-key=${apiKey}`;
+    
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -2263,23 +2358,29 @@ async function fetchNYTBestSellers(listName = 'hardcover-fiction') {
       coverUrl: book.book_image
     }));
     
-    // Store in cache
-    bestsellersCache.set(cacheKey, {
+    // Store in file cache
+    const cacheData = {
       timestamp: Date.now(),
       data: books
-    });
+    };
+    
+    await fs.writeFile(cacheFile, JSON.stringify(cacheData, null, 2), 'utf8');
+    console.log(`Cached bestseller data for ${listName} in file`);
     
     return books;
   } catch (error) {
     console.error(`Error fetching NYT best sellers for list "${listName}":`, error);
     
-    // If we have cached data (even if expired), use it as fallback
-    if (cachedData) {
+    // Try to use cached data even if expired as fallback
+    try {
+      const fileContent = await fs.readFile(cacheFile, 'utf8');
+      const cachedData = JSON.parse(fileContent);
       console.log(`Using expired cached data for ${listName} due to API error`);
       return cachedData.data;
+    } catch (readError) {
+      // No cached data available
+      return [];
     }
-    
-    return [];
   }
 }
 

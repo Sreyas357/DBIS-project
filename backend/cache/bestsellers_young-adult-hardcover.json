@@ -1,0 +1,95 @@
+{
+  "timestamp": 1746253834716,
+  "data": [
+    {
+      "title": "WATCH ME",
+      "author": "Tahereh Mafi",
+      "rank": 1,
+      "weeksOnList": 2,
+      "amazonUrl": "https://www.amazon.com/dp/0063425181?tag=thenewyorktim-20",
+      "isbn": "9780063425187",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780063425187.jpg"
+    },
+    {
+      "title": "HEARTLESS HUNTER",
+      "author": "Kristen Ciccarelli",
+      "rank": 2,
+      "weeksOnList": 32,
+      "amazonUrl": "https://www.amazon.com/dp/1250866901?tag=thenewyorktim-20",
+      "isbn": "9781250866905",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781250866905.jpg"
+    },
+    {
+      "title": "REBEL WITCH",
+      "author": "Kristen Ciccarelli",
+      "rank": 3,
+      "weeksOnList": 10,
+      "amazonUrl": "https://www.amazon.com/dp/1250866928?tag=thenewyorktim-20",
+      "isbn": "9781250866929",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781250866929.jpg"
+    },
+    {
+      "title": "OUR INFINITE FATES",
+      "author": "Laura Steven",
+      "rank": 4,
+      "weeksOnList": 8,
+      "amazonUrl": "https://www.amazon.com/dp/1250333881?tag=thenewyorktim-20",
+      "isbn": "9781250333889",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781250333889.jpg"
+    },
+    {
+      "title": "NOTHING LIKE THE MOVIES",
+      "author": "Lynn Painter",
+      "rank": 5,
+      "weeksOnList": 30,
+      "amazonUrl": "https://www.amazon.com/dp/1665947136?tag=thenewyorktim-20",
+      "isbn": "9781665947138",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781665947138.jpg"
+    },
+    {
+      "title": "WINGS OF STARLIGHT",
+      "author": "Allison Saft",
+      "rank": 6,
+      "weeksOnList": 12,
+      "amazonUrl": "https://www.amazon.com/dp/1368098452?tag=thenewyorktim-20",
+      "isbn": "9781368098458",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781368098458.jpg"
+    },
+    {
+      "title": "FABLE FOR THE END OF THE WORLD",
+      "author": "Ava Reid",
+      "rank": 7,
+      "weeksOnList": 8,
+      "amazonUrl": "https://www.amazon.com/dp/0063430010?tag=thenewyorktim-20",
+      "isbn": "9780063430013",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780063430013.jpg"
+    },
+    {
+      "title": "NIGHTWEAVER",
+      "author": "R. M. Gray",
+      "rank": 8,
+      "weeksOnList": 8,
+      "amazonUrl": "https://www.amazon.com/dp/0316583367?tag=thenewyorktim-20",
+      "isbn": "9780316587259",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9780316583367.jpg"
+    },
+    {
+      "title": "IF HE HAD BEEN WITH ME",
+      "author": "Laura Nowlin",
+      "rank": 9,
+      "weeksOnList": 25,
+      "amazonUrl": "http://www.amazon.com/If-He-Had-Been-Me-ebook/dp/B00APIVOIE?tag=thenewyorktim-20",
+      "isbn": "9781464231025",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781402277832.jpg"
+    },
+    {
+      "title": "DIVINE RIVALS",
+      "author": "Rebecca Ross",
+      "rank": 10,
+      "weeksOnList": 88,
+      "amazonUrl": "https://www.amazon.com/dp/1250857430?tag=thenewyorktim-20",
+      "isbn": "9781250857439",
+      "coverUrl": "https://storage.googleapis.com/du-prd/books/images/9781250857439.jpg"
+    }
+  ]
+}

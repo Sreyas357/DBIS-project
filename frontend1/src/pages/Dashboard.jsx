@@ -162,10 +162,22 @@ const Dashboard = () => {
                             alt={book.title} 
                             className="book-cover" 
                           />
+                          
                         </div>
                         <div className="book-info">
                           <h3 className="book-title">{book.title}</h3>
                           <p className="book-author">By {book.author}</p>
+
+                          <a 
+                            href={`https://www.amazon.com/s?k=${encodeURIComponent(book.title + " " + book.author)}`}
+                            className="amazon-link"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Buy on Amazon
+                          </a>
+                          
                         </div>
                       </div>
                     ))}
