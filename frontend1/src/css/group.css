@@ -139,6 +139,16 @@
 .group-action-btn.join {
   background-color: #3182ce;
   color: white;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 4px;
+  top: 1.5rem;
+  right: 1.5rem;
+  text-transform: none;
+  letter-spacing: normal;
+  min-width: auto;
+  max-width: fit-content;
 }
 
 .group-action-btn.join:hover {
@@ -177,12 +187,16 @@
 .group-action-btn.leave {
   background-color: #edf2f7;
   color: #4a5568;
-  padding: 0.45rem 0.9rem;
-  font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.7rem;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: 4px;
   top: 1.5rem;
   right: 1.5rem;
+  text-transform: none;
+  letter-spacing: normal;
+  min-width: auto;
+  max-width: fit-content;
 }
 
 .group-action-btn.leave:hover {
@@ -208,8 +222,16 @@
 .group-action-btn.request {
   background-color: #ed8936;
   color: white;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 4px;
   top: 1.5rem;
   right: 1.5rem;
+  text-transform: none;
+  letter-spacing: normal;
+  min-width: auto;
+  max-width: fit-content;
 }
 
 .group-action-btn.request:hover {
@@ -396,20 +418,18 @@
   border-radius: 12px;
   overflow: hidden;
   width: fit-content;
-  border: 1px solid #e5e7eb;
+  border: none;
+  padding: 0;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  background-color: #fff;
 }
 
 .dark-mode .view-toggle {
-  border-color: #374151;
+  border: none;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  background-color: #1f2937;
 }
 
 .view-toggle-btn {
   padding: 0.75rem 2rem;
-  background-color: transparent;
   color: #4b5563;
   border: none;
   cursor: pointer;
@@ -418,22 +438,35 @@
   transition: all 0.2s;
   position: relative;
   z-index: 1;
+  margin: 0;
+  background-color: #f9fafb;
 }
 
 .dark-mode .view-toggle-btn {
   color: #d1d5db;
+  background-color: #1f2937;
 }
 
 .view-toggle-btn.active {
   background-color: #4f46e5;
   color: white;
   font-weight: 600;
-  box-shadow: 0 2px 5px rgba(79, 70, 229, 0.3);
+  box-shadow: none;
 }
 
 .dark-mode .view-toggle-btn.active {
   background-color: #6366f1;
-  box-shadow: 0 2px 5px rgba(99, 102, 241, 0.3);
+  box-shadow: none;
+}
+
+.view-toggle-btn:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.view-toggle-btn:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
 }
 
 .view-toggle-btn:hover:not(.active) {
@@ -607,42 +640,57 @@
 }
 
 .leave-group-btn {
-  padding: 0.4rem 1rem;
-  background-color: #f1f1f1;
-  color: #333;
+  padding: 0.3rem 0.6rem;
+  background-color: #edf2f7;
+  color: #4a5568;
   border: none;
   border-radius: 4px;
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 0.7rem;
   cursor: pointer;
-  font-size: 0.9rem;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  text-transform: none;
+  letter-spacing: normal;
+  min-width: auto;
+  max-width: fit-content;
 }
 
 .leave-group-btn:hover {
-  background-color: #e0e0e0;
+  background-color: #e2e8f0;
   transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.dark-mode .leave-group-btn {
+  background-color: #2d3748;
+  color: #e2e8f0;
+}
+
+.dark-mode .leave-group-btn:hover {
+  background-color: #4a5568;
 }
 
 /* Delete group button in details page */
 .delete-group-btn {
-  padding: 0.4rem 1rem;
-  background-color: #dc3545;
+  background-color: #e53e3e;
   color: white;
   border: none;
   border-radius: 4px;
-  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 0.9rem;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  text-transform: none;
+  letter-spacing: normal;
+  min-width: auto;
+  max-width: fit-content;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .delete-group-btn:hover {
-  background-color: #c82333;
+  background-color: #c53030;
   transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
 
 .dark-mode .delete-group-btn {
@@ -651,15 +699,6 @@
 
 .dark-mode .delete-group-btn:hover {
   background-color: #b71c1c;
-}
-
-.dark-mode .leave-group-btn {
-  background-color: #444;
-  color: #e0e0e0;
-}
-
-.dark-mode .leave-group-btn:hover {
-  background-color: #555;
 }
 
 .back-button {

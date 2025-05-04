@@ -3125,8 +3125,7 @@ app.get('/api/user/groups', isAuthenticated, async (req, res) => {
         const query = `
             SELECT g.*, 
                    u.username as owner_username,
-                   COUNT(DISTINCT gm2.user_id) as member_count,
-                   gm1.is_admin
+                   COUNT(DISTINCT gm2.user_id) as member_count
             FROM groups g
             JOIN users u ON g.owner_id = u.user_id
             JOIN group_members gm1 ON g.group_id = gm1.group_id AND gm1.user_id = $1
