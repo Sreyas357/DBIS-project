@@ -2642,18 +2642,26 @@ app.get('/api/user/genres', isAuthenticated, async (req, res) => {
 // Get all public groups
 app.get('/api/groups', async (req, res) => {
     try {
+        const userId = req.session.userId; // Get current user's ID from session
+        
         const query = `
             SELECT g.*, 
                    u.username as owner_username,
-                   COUNT(DISTINCT gm.user_id) as member_count
+                   COUNT(DISTINCT gm2.user_id) as member_count,
+                   CASE WHEN my_membership.is_admin = true THEN true ELSE false END as is_admin
             FROM groups g
             JOIN users u ON g.owner_id = u.user_id
-            LEFT JOIN group_members gm ON g.group_id = gm.group_id
-            GROUP BY g.group_id, u.username
+            LEFT JOIN group_members gm2 ON g.group_id = gm2.group_id
+            LEFT JOIN (
+                SELECT group_id, user_id, is_admin
+                FROM group_members
+                WHERE user_id = $1
+            ) my_membership ON g.group_id = my_membership.group_id
+            GROUP BY g.group_id, u.username, my_membership.is_admin
             ORDER BY g.created_at DESC
         `;
         
-        const result = await pool.query(query);
+        const result = await pool.query(query, [userId || null]);
         res.json(result.rows);
     } catch (err) {
         console.error('Error fetching groups:', err);
@@ -3125,7 +3133,8 @@ app.get('/api/user/groups', isAuthenticated, async (req, res) => {
         const query = `
             SELECT g.*, 
                    u.username as owner_username,
-                   COUNT(DISTINCT gm2.user_id) as member_count
+                   COUNT(DISTINCT gm2.user_id) as member_count,
+                   gm1.is_admin as is_admin
             FROM groups g
             JOIN users u ON g.owner_id = u.user_id
             JOIN group_members gm1 ON g.group_id = gm1.group_id AND gm1.user_id = $1

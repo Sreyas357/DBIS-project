@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ThemeContext } from './ThemeContext';
 
@@ -8,8 +8,16 @@ const Group = ({ group, isUserMember, onJoinLeave, onRequestJoin, hasPendingRequ
   const [loading, setLoading] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
 
-  // Check if the user is an admin of this group
-  const isAdmin = isUserMember && (group.is_admin || group.owner_id === parseInt(localStorage.getItem('userId')));
+  // Check if the user is an admin of this group using only the group's is_admin property
+  const isAdmin = isUserMember && group.is_admin;
+  
+  // // Debug log
+  // useEffect(() => {
+  //   console.log(`Group ${group.name} (ID: ${group.group_id}):`);
+  //   console.log('User Member:', isUserMember);
+  //   console.log('Group is_admin prop:', group.is_admin);
+  //   console.log('Is Admin calculated:', isAdmin);
+  // }, [group, isUserMember, isAdmin]);
 
   const handleGroupClick = () => {
     navigate(`/groups/${group.group_id}`);
@@ -112,7 +120,8 @@ const Group = ({ group, isUserMember, onJoinLeave, onRequestJoin, hasPendingRequ
         </div>
       </div>
       
-      {!group.invite_only && !isUserMember && (
+      {/* Non-members see Join or Request button */}
+      {!isUserMember && !group.invite_only && (
         <button 
           className="group-action-btn join"
           onClick={handleJoinLeave}
@@ -122,27 +131,7 @@ const Group = ({ group, isUserMember, onJoinLeave, onRequestJoin, hasPendingRequ
         </button>
       )}
 
-      {!group.invite_only && isUserMember && !isAdmin && (
-        <button 
-          className="group-action-btn leave"
-          onClick={handleJoinLeave}
-          disabled={loading}
-        >
-          {loading ? 'Processing...' : 'Leave Group'}
-        </button>
-      )}
-
-      {!group.invite_only && isAdmin && (
-        <button 
-          className="group-action-btn delete"
-          onClick={handleDeleteGroup}
-          disabled={loading}
-        >
-          {loading ? 'Processing...' : 'Delete Group'}
-        </button>
-      )}
-
-      {group.invite_only && !isUserMember && (
+      {!isUserMember && group.invite_only && (
         <button 
           className={`group-action-btn request ${showRequestSent ? 'requested' : ''}`}
           onClick={handleRequestJoin}
@@ -153,23 +142,25 @@ const Group = ({ group, isUserMember, onJoinLeave, onRequestJoin, hasPendingRequ
         </button>
       )}
       
-      {group.invite_only && isUserMember && !isAdmin && (
-        <button 
-          className="group-action-btn leave"
-          onClick={handleJoinLeave}
-          disabled={loading}
-        >
-          {loading ? 'Processing...' : 'Leave Group'}
-        </button>
-      )}
-
-      {group.invite_only && isAdmin && (
+      {/* Admin users see Delete button */}
+      {isUserMember && isAdmin && (
         <button 
           className="group-action-btn delete"
           onClick={handleDeleteGroup}
           disabled={loading}
         >
           {loading ? 'Processing...' : 'Delete Group'}
+        </button>
+      )}
+      
+      {/* Regular members see Leave button */}
+      {isUserMember && !isAdmin && (
+        <button 
+          className="group-action-btn leave"
+          onClick={handleJoinLeave}
+          disabled={loading}
+        >
+          {loading ? 'Processing...' : 'Leave Group'}
         </button>
       )}
     </div>
