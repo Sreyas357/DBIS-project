@@ -77,7 +77,7 @@ const SubscribedThreads = () => {
         </div>
         <div className="threads-main">
           <div className="thread-category-header">
-            <h2>My Subscribed Threads</h2>
+            <h2>My Favourite Threads</h2>
           </div>
           <div className="thread-actions-bar">
             <button 
@@ -89,8 +89,8 @@ const SubscribedThreads = () => {
           </div>
           {threads.length === 0 && !loading ? (
             <div className="no-subscriptions">
-              <p>You haven't subscribed to any threads yet.</p>
-              <p>Subscribe to threads to keep track of discussions you're interested in.</p>
+              <p>You haven't had any Favourite threads yet.</p>
+              <p>Marks threads as Favourite to store here</p>
               <button 
                 onClick={() => navigate('/threads')}
                 className="browse-threads-btn"

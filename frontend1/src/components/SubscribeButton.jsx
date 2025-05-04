@@ -39,7 +39,7 @@ const SubscribeButton = ({ threadId, initialIsSubscribed }) => {
       onClick={toggleSubscription}
       disabled={isLoading}
     >
-      {isLoading ? 'Loading...' : isSubscribed ? 'Unsubscribe' : 'Subscribe'}
+      {isLoading ? 'Loading...' : isSubscribed ? 'Default' : 'Favourite'}
     </button>
   );
 };

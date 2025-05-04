@@ -19,7 +19,7 @@ const ThreadCategoriesList = ({ categories, loading, selectedCategoryId }) => {
           <Link to="/threads">All Threads</Link>
         </li>
         <li className={selectedCategoryId === 'subscribed' ? 'active' : ''}>
-          <Link to="/threads/subscribed">My Subscriptions</Link>
+          <Link to="/threads/subscribed">My Favourites</Link>
         </li>
         {categories.map(category => (
           <li 

@@ -305,7 +305,7 @@ const Signup = () => {
             alt="Google logo" 
             className="google-icon" 
           />
-          Sign up with Googlewindow.location.href
+          Sign up with Google
         </button>
         
         <p>
