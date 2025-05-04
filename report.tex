@@ -1,0 +1,344 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{enumitem}
+
+\title{BookSocial: A Social Platform for Book Enthusiasts}
+\author{Database and Information Systems Project}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction and Goals}
+BookSocial is a web application designed to create a community for book enthusiasts. The main goals of the project were to:
+\begin{itemize}
+    \item Create a platform where users can discover, rate, and review books
+    \item Enable social interactions through discussions, messaging, and groups
+    \item Provide personalized book recommendations based on user preferences
+    \item Build a responsive and user-friendly interface for both desktop and mobile users
+\end{itemize}
+
+\section{Implementation from a User Perspective}
+From a user perspective, the following features were implemented:
+\begin{itemize}
+    \item User authentication (signup, login, Google OAuth integration)
+    \item Book discovery, details viewing, rating, and reviewing
+    \item Social interactions (following other users, messaging)
+    \item Discussion threads with categories, comments, and upvoting system
+    \item Group creation and management for themed discussions
+    \item Real-time notifications for user interactions
+\end{itemize}
+
+\section{Architecture}
+The application follows a three-tier architecture:
+\begin{itemize}
+    \item \textbf{Frontend:} React.js with React Router for client-side routing
+    \item \textbf{Backend:} Node.js with Express.js REST API
+    \item \textbf{Database:} PostgreSQL relational database
+\end{itemize}
+
+Key architectural components:
+\begin{itemize}
+    \item RESTful API design for communication between frontend and backend
+    \item Session-based authentication for security
+    \item Normalized database schema for efficient data management
+    \item External API integration (Google Books API, NYT Bestsellers API)
+\end{itemize}
+
+\section{Authentication System}
+The authentication system was designed with security, usability, and modern standards in mind. Multiple authentication methods were implemented to provide flexibility while maintaining security.
+
+\subsection{Traditional Authentication}
+The system implements a secure email/password-based authentication:
+\begin{itemize}
+    \item Password security: All passwords are hashed using bcrypt (with a work factor of 10) before storage
+    \item Session-based authentication: Express.js session middleware with secure HTTP-only cookies manages user sessions
+    \item Server-side validation ensures proper input formatting and prevents common attack vectors
+\end{itemize}
+
+\subsection{Google OAuth Integration}
+Google OAuth was implemented to provide a smooth social login experience:
+\begin{itemize}
+    \item Implementation: Used Passport.js with the \texttt{passport-google-oauth20} strategy
+    \item Account linking: If a user has previously signed up with email/password and later uses Google OAuth with the same email, the system intelligently links these accounts
+    \item User creation: For new Google OAuth users, the system generates a unique username based on their Google display name plus a random number
+    \item Session handling: Upon successful OAuth authentication, the application creates a session identical to traditional login
+\end{itemize}
+
+\subsection{Email Verification}
+To ensure user email authenticity, a verification system was implemented:
+\begin{itemize}
+    \item OTP generation: A secure 6-digit One-Time Password is generated for each verification request
+    \item Email delivery: Nodemailer with Gmail SMTP is used to send verification emails
+    \item Temporary storage: OTPs are stored in a server-side Map with 10-minute expiration
+    \item Verification workflow: 
+    \begin{enumerate}
+        \item User submits registration details
+        \item System validates email uniqueness and generates OTP
+        \item Email with verification code is sent to user
+        \item User submits OTP for verification
+        \item System confirms OTP validity and completes registration
+    \end{enumerate}
+\end{itemize}
+
+\subsection{Password Reset}
+The system includes a secure password reset mechanism:
+\begin{itemize}
+    \item User request: User submits their email address for password reset
+    \item Email verification: Similar to the email verification process, a 6-digit OTP is generated and sent
+    \item OTP validation: Upon submission, OTP is validated for correctness and expiration
+    \item Password update: New password is hashed and updated in the database
+    \item Security measures: All reset tokens are single-use and expire after 10 minutes
+\end{itemize}
+
+\subsection{Session Management}
+User sessions are managed securely:
+\begin{itemize}
+    \item Session storage: Server-side session storage with client-side cookie containing only the session ID
+    \item Security features: HTTP-only cookies prevent JavaScript access to session data
+    \item Session duration: 24-hour session lifetime with automatic extension on user activity
+    \item Authentication middleware: Custom middleware validates session existence before allowing access to protected routes
+\end{itemize}
+
+\section{Books Discovery System}
+The Books feature was implemented as a central component of the application, allowing users to discover, search, and interact with a vast collection of books.
+
+
+\subsection{Browse and Filter System}
+Multiple methods were implemented to help users find books of interest:
+\begin{itemize}
+    \item \textbf{Genre filtering:} A sidebar displays all available genres, allowing users to filter books by one or more genres
+    \item \textbf{Multi-criteria sorting:} Users can sort the book collection by:
+    \begin{itemize}
+        \item Title (alphabetically ascending or descending)
+        \item Rating (highest first)
+        \item Number of reviews (most reviewed first)
+        \item Publication year (newest first)
+    \end{itemize}
+    \item \textbf{Search functionality:} A sophisticated search system with:
+    \begin{itemize}
+        \item Real-time search suggestions with dropdown preview
+        \item Search scope selection (all fields, title only, author only)
+        \item Highlighting of matching results
+    \end{itemize}
+\end{itemize}
+
+\subsection{Online Search Integration}
+To address situations where books aren't found in the local database, an online search functionality was integrated:
+\begin{itemize}
+    \item \textbf{Google Books API integration:} When local search yields no results, users can trigger a search against the Google Books API
+    \item \textbf{Automated data extraction:} The system extracts relevant book details including:
+    \begin{itemize}
+        \item Basic information (title, author, description)
+        \item Publication details (year, publisher, page count)
+        \item Visual assets (cover images)
+        \item Categorization (genres/categories)
+        \item Identification (ISBN numbers)
+    \end{itemize}
+    \item \textbf{Database enrichment:} New books discovered through online search are automatically:
+    \begin{itemize}
+        \item Added to the local database
+        \item Associated with appropriate genres (creating new genres if needed)
+        \item Made immediately available for user interaction
+    \end{itemize}
+    \item \textbf{Deduplication logic:} The system prevents duplicate entries by checking existing books before adding new ones
+\end{itemize}
+
+\subsection{User Interaction with Books}
+The system supports rich user interactions with books:
+\begin{itemize}
+    \item \textbf{Rating system:} Interactive 5-star rating component for users to rate books
+    \item \textbf{Real-time updates:} Book ratings are immediately updated and reflected in the UI
+    \item \textbf{User review persistence:} The system tracks and displays each user's ratings across sessions
+    \item \textbf{Aggregate statistics:} Average ratings and total number of ratings are calculated and displayed for each book
+\end{itemize}
+
+\section{Discussion Thread System}
+The thread system was designed to facilitate rich community discussions with organized categories, nested comments, and interactive features. It serves as the central hub for literary discourse within the platform.
+
+\subsection{Thread Organization Structure}
+The thread system employs a hierarchical organization system:
+\begin{itemize}
+    \item \textbf{Categories:} Threads are organized into topic-based categories (e.g., "Book Discussions", "Author Spotlights")
+    \item \textbf{Visual distinction:} Each category features a unique color scheme for easy visual identification
+    \item \textbf{Thread hierarchy:} Threads contain comments, which can contain nested replies
+    \item \textbf{Thread pinning:} Important threads can be pinned to appear at the top of listings
+\end{itemize}
+
+\subsection{Advanced Thread Discovery}
+Multiple methods were implemented to help users discover relevant discussions:
+\begin{itemize}
+    \item \textbf{Multi-criteria sorting:} Users can sort threads by:
+    \begin{itemize}
+        \item Trending (algorithm combining recency, votes, and activity)
+        \item Newest (chronological order)
+        \item Most commented (engagement-based)
+        \item Most viewed (popularity-based)
+    \end{itemize}
+    \item \textbf{Category filtering:} Sidebar navigation allows users to view threads within specific categories
+    \item \textbf{Comprehensive search:} Real-time search across thread titles, content, and associated books
+    \item \textbf{Subscribed threads:} Users can access a personalized feed of threads they've subscribed to
+\end{itemize}
+
+\subsection{Thread Creation and Content}
+The thread creation system offers flexible options:
+\begin{itemize}
+    \item \textbf{Rich text content:} Support for formatted paragraphs and line breaks
+    \item \textbf{Category assignment:} Users select an appropriate category for their thread
+    \item \textbf{Book association:} Optional ability to link a thread to a specific book
+    \item \textbf{Search integration:} When linking books, users can search the book database
+    \item \textbf{URL parameter persistence:} Category selections are preserved in URLs for direct linking
+\end{itemize}
+
+\subsection{Engagement and Interaction}
+The system supports rich user interactions with threads:
+\begin{itemize}
+    \item \textbf{Voting system:} Users can upvote or downvote threads and comments
+    \item \textbf{Vote tracking:} The system records and displays each user's votes across sessions
+    \item \textbf{Subscription feature:} Users can subscribe to threads to receive updates
+    \item \textbf{View tracking:} Thread view counts are recorded and displayed
+    \item \textbf{User identification:} All content shows the author's username with links to their profile
+    \item \textbf{Timestamps:} Creation times are displayed for all content
+\end{itemize}
+
+\subsection{Comment and Reply System}
+A sophisticated commenting system allows for rich discussions:
+\begin{itemize}
+    \item \textbf{Threaded comments:} Comments appear in chronological order
+    \item \textbf{Nested replies:} Users can reply directly to comments or to other replies
+    \item \textbf{Depth visualization:} Visual indentation shows the relationship between comments and replies
+    \item \textbf{Interactive voting:} Comments and replies have independent voting systems
+    \item \textbf{Reply counters:} Display of reply counts provides a measure of comment engagement
+    \item \textbf{Expandable threads:} Long reply threads can be expanded or collapsed
+\end{itemize}
+
+\section{Messaging System}
+The messaging system was designed to enable direct communication between users, fostering community connections and private discussions about literary interests. The system combines simplicity with functionality to create an intuitive messaging experience.
+
+\subsection{Conversation Management}
+The messaging interface employs a dual-panel design for efficient conversation management:
+\begin{itemize}
+    \item \textbf{Conversations sidebar:} Displays all active conversations, sorted by most recent activity
+    \item \textbf{Dynamic updates:} New messages are immediately visible in the conversation list
+    \item \textbf{Conversation previews:} Each entry displays the conversation partner's username
+    \item \textbf{Temporal organization:} Conversations are automatically sorted with the most recently active appearing at the top
+\end{itemize}
+
+\subsection{Direct Messaging Interface}
+The messaging interface provides a familiar and intuitive user experience:
+\begin{itemize}
+    \item \textbf{Message threading:} Messages are displayed in chronological order with clear visual distinction between sent and received messages
+    \item \textbf{Message composition:} A persistent input area at the bottom of the conversation panel allows for quick message composition
+    \item \textbf{Send functionality:} Messages can be sent via button click or by pressing Enter for efficient communication
+    \item \textbf{Empty state handling:} New conversations display appropriate prompts encouraging users to initiate communication
+\end{itemize}
+
+\subsection{User Discovery and Connection}
+Multiple entry points were implemented to facilitate new conversations:
+\begin{itemize}
+    \item \textbf{Profile integration:} Direct message buttons on user profile pages allow for immediate conversation initiation
+    \item \textbf{Username navigation:} Users can directly enter a conversation by visiting \texttt{/messages/username}
+    \item \textbf{Thread context:} Thread and comment authors' usernames link to their profiles, providing pathways to private conversations
+\end{itemize}
+
+\subsection{Database Architecture}
+The messaging system is built on an efficient database design:
+\begin{itemize}
+    \item \textbf{Messages table:} Core table storing message content with sender, recipient, and timestamp information
+    \item \textbf{Indexing strategy:} Optimized queries using composite indices on sender\_id and recipient\_id fields
+    \item \textbf{Timestamp utilization:} Created\_at timestamps enable chronological display and conversation sorting
+\end{itemize}
+
+\subsection{Technical Implementation}
+The messaging functionality was implemented with attention to performance and usability:
+\begin{itemize}
+    \item \textbf{RESTful API:} Dedicated endpoints for retrieving conversations, fetching message history, and sending new messages
+    \item \textbf{Credential inclusion:} All API calls include authentication to ensure secure access to message data
+    \item \textbf{Conversation aggregation:} SQL queries use JOIN operations and GROUP BY clauses to efficiently aggregate conversations
+    \item \textbf{Message delivery:} Optimistic UI updates show sent messages immediately before server confirmation
+    \item \textbf{Error handling:} Robust error states with appropriate user feedback for failed message delivery
+\end{itemize}
+
+\subsection{UI Responsiveness}
+The messaging interface is designed to work seamlessly across devices:
+\begin{itemize}
+    \item \textbf{Adaptive layout:} On mobile devices, the interface switches to a single-panel design with intuitive navigation between conversation list and active conversation
+    \item \textbf{Flexible composition area:} The message input field automatically adjusts its height to accommodate longer messages
+    \item \textbf{Touch optimization:} Larger touch targets and appropriate spacing for mobile users
+\end{itemize}
+
+\section{Group Management System}
+The Groups system was designed to facilitate community building around specific literary interests, enabling users to create and participate in focused discussions within specialized communities.
+
+\subsection{Group Organization and Structure}
+The Groups feature implements a community-oriented organization system:
+\begin{itemize}
+    \item \textbf{Public and private groups:} Support for both open-access and invite-only communities
+    \item \textbf{Owner and admin roles:} Hierarchical permission system with special privileges for group creators
+    \item \textbf{Group profiles:} Each group includes a descriptive bio and member listing
+    \item \textbf{Membership management:} Tracking of all member affiliations with joining timestamps
+\end{itemize}
+
+\subsection{Access Control and Privacy}
+The system includes comprehensive access control mechanisms:
+\begin{itemize}
+    \item \textbf{Invite-only groups:} Group owners can restrict access requiring explicit approval
+    \item \textbf{Join request workflow:} Users can submit requests to join private groups with optional messages
+    \item \textbf{Approval system:} Group owners can accept or reject join requests with notifications
+    \item \textbf{Member removal:} Users can leave groups at any time, except for group owners
+\end{itemize}
+
+\subsection{Group Communication}
+Each group includes a dedicated communication channel:
+\begin{itemize}
+    \item \textbf{Group messaging:} Members-only chat system for topical discussions
+    \item \textbf{Chronological message display:} Messages appear in time order with sender identification
+    \item \textbf{User attribution:} All messages display the sender's username with profile links
+    \item \textbf{Access restrictions:} Messages are only visible to group members
+\end{itemize}
+
+\subsection{Discovery and Navigation}
+The system includes multiple mechanisms for group discovery:
+\begin{itemize}
+    \item \textbf{Group listings:} Views for browsing all public groups
+    \item \textbf{Membership filters:} Quick access to groups the user has joined
+    \item \textbf{Search functionality:} Real-time search across group names and descriptions
+    \item \textbf{Member counts:} Visual indicators of group size and activity
+\end{itemize}
+
+\subsection{Administrative Features}
+Group owners have access to management capabilities:
+\begin{itemize}
+    \item \textbf{Group creation:} Simple interface for establishing new communities
+    \item \textbf{Access type configuration:} Option to set groups as public or invite-only
+    \item \textbf{Request management:} Dashboard for reviewing and responding to join requests
+    \item \textbf{Group deletion:} Option for administrators to disband groups when necessary
+\end{itemize}
+
+\subsection{Database Implementation}
+The group system is built on a relational database model:
+\begin{itemize}
+    \item \textbf{Groups table:} Stores core group information including name, description, and visibility settings
+    \item \textbf{Group\_members table:} Junction table tracking user membership with admin status flags
+    \item \textbf{Group\_messages table:} Stores all group communications with user association
+    \item \textbf{Group\_join\_requests table:} Tracks pending, accepted, and rejected membership requests
+\end{itemize}
+
+\subsection{Technical Implementation}
+The groups functionality leverages modern web development practices:
+\begin{itemize}
+    \item \textbf{RESTful API:} Standardized endpoints for group operations and message handling
+    \item \textbf{Real-time updates:} Immediate UI reflection of message sending and membership changes
+    \item \textbf{Transaction management:} Database transactions for critical operations like group deletion
+    \item \textbf{Access control middleware:} Server-side validation of group membership for protected operations
+    \item \textbf{Optimistic UI updates:} Messages appear in the UI immediately while being sent to the server
+\end{itemize}
+
+% More sections to be added in future steps
+
+\end{document}

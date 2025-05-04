@@ -142,3 +142,37 @@
     font-weight: bold;
   }
   
+  /* Add or update these styles */
+.navbar {
+  /* ...existing code... */
+  padding: 0 20px; /* Add padding to the navbar */
+  overflow: visible; /* Ensure content doesn't get cut off */
+}
+
+.nav-right {
+  /* ...existing code... */
+  margin-right: 10px; /* Add margin to keep content away from edge */
+  display: flex;
+  align-items: center;
+}
+
+.logout-btn {
+  /* ...existing code... */
+  white-space: nowrap; /* Prevent text from wrapping */
+  margin-left: 10px; /* Space between notification icon and button */
+}
+
+/* For smaller screens, add responsive design */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 10px;
+  }
+  
+  .nav-center {
+    flex-wrap: wrap;
+  }
+  
+  .nav-right {
+    margin-right: 5px;
+  }
+}

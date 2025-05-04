@@ -301,11 +301,11 @@ const Signup = () => {
           onClick={handleGoogleSignIn}
         >
           <img 
-            src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" 
+            src="https://developers.google.com/identity/images/g-logo.png" 
             alt="Google logo" 
             className="google-icon" 
           />
-          Sign up with Google
+          Sign up with Googlewindow.location.href
         </button>
         
         <p>
