@@ -293,7 +293,7 @@ const GroupDetails = () => {
                 <textarea
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a mess+age..."
+                  placeholder="Type a message..."
                   className="message-input"
                   rows={3}
                 />
