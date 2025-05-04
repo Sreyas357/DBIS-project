@@ -1,44 +1,55 @@
 /* Styling for group cards */
 .group-card {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 8px;
+  flex-direction: column;
+  position: relative;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  border-radius: 12px;
   background-color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transition: transform 0.25s, box-shadow 0.25s;
   cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  overflow: hidden;
 }
 
 .group-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .group-card.dark-mode {
-  background-color: #2a2a2a;
-  color: #e0e0e0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .group-info {
   flex: 1;
+  margin-bottom: 1rem;
 }
 
 .group-name {
-  margin: 0 0 0.5rem;
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 0.75rem;
+  padding-right: 6rem; /* Make room for buttons */
+  line-height: 1.3;
+}
+
+.dark-mode .group-name {
+  color: #f0f0f0;
 }
 
 .group-bio {
-  margin: 0 0 0.75rem;
-  color: #666;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  max-height: 2.8rem;
+  margin: 0 0 1rem;
+  color: #4a5568;
+  font-size: 1rem;
+  line-height: 1.6;
+  max-height: 3.2rem;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -47,226 +58,417 @@
 }
 
 .dark-mode .group-bio {
-  color: #aaa;
+  color: #cbd5e0;
 }
 
 .group-meta {
   display: flex;
-  gap: 1rem;
-  font-size: 0.8rem;
-  color: #777;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  font-size: 0.9rem;
+  color: #718096;
+  margin-top: 0.75rem;
 }
 
 .dark-mode .group-meta {
-  color: #999;
+  color: #a0aec0;
+}
+
+.group-owner {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.group-owner:before {
+  content: "👤";
+  font-size: 0.9rem;
+}
+
+.group-members:before {
+  content: "👥";
+  margin-right: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.group-type:before {
+  font-size: 0.9rem;
+  margin-right: 0.25rem;
 }
 
 .group-meta a {
-  color: #0066cc;
+  color: #3182ce;
   text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
 }
 
 .dark-mode .group-meta a {
-  color: #4d9eff;
+  color: #63b3ed;
 }
 
 .group-meta a:hover {
+  color: #2c5282;
   text-decoration: underline;
+}
+
+.dark-mode .group-meta a:hover {
+  color: #90cdf4;
 }
 
 /* Improved button styling */
 .group-action-btn {
-  padding: 0.4rem 0.9rem;
-  border-radius: 4px;
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
   border: none;
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .group-action-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .group-action-btn.join {
-  background-color: #4285f4;
+  background-color: #3182ce;
   color: white;
 }
 
 .group-action-btn.join:hover {
-  background-color: #2b6ed9;
+  background-color: #2b6cb0;
 }
 
-.group-action-btn.leave {
-  background-color: #f1f1f1;
-  color: #333;
-}
-
-.group-action-btn.leave:hover {
-  background-color: #e0e0e0;
-}
-
-/* New delete button styling */
+/* Redesigned delete button styling */
 .group-action-btn.delete {
-  background-color: #dc3545;
+  background-color: #e53e3e;
   color: white;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 4px;
+  top: 1.5rem;
+  right: 1.5rem;
+  text-transform: none;
+  letter-spacing: normal;
+  min-width: auto;
+  max-width: fit-content;
 }
 
 .group-action-btn.delete:hover {
-  background-color: #c82333;
+  background-color: #c53030;
 }
 
 .dark-mode .group-action-btn.delete {
-  background-color: #d32f2f;
-  color: white;
+  background-color: #fc8181;
+  color: #1a202c;
 }
 
 .dark-mode .group-action-btn.delete:hover {
-  background-color: #b71c1c;
+  background-color: #f56565;
+}
+
+.group-action-btn.leave {
+  background-color: #edf2f7;
+  color: #4a5568;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 6px;
+  top: 1.5rem;
+  right: 1.5rem;
+}
+
+.group-action-btn.leave:hover {
+  background-color: #e2e8f0;
 }
 
 .dark-mode .group-action-btn.leave {
-  background-color: #444;
-  color: #e0e0e0;
+  background-color: #2d3748;
+  color: #e2e8f0;
 }
 
 .dark-mode .group-action-btn.leave:hover {
-  background-color: #555;
+  background-color: #4a5568;
 }
 
 .group-action-btn:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
 .group-action-btn.request {
-  background-color: #f39c12;
+  background-color: #ed8936;
   color: white;
+  top: 1.5rem;
+  right: 1.5rem;
 }
 
 .group-action-btn.request:hover {
-  background-color: #e67e22;
+  background-color: #dd6b20;
 }
 
 .group-action-btn.request.requested {
-  background-color: #95a5a6;
+  background-color: #718096;
   cursor: default;
+}
+
+/* When a group has multiple buttons (admin view) */
+.group-card .admin-buttons {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-buttons .group-action-btn {
+  position: static;
+  margin: 0;
+}
+
+/* Empty state */
+.groups-empty {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #4a5568;
+  background-color: #fff;
+  border-radius: 16px;
+  margin: 2rem 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.dark-mode .groups-empty {
+  background-color: #1a1a1a;
+  color: #a0aec0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.groups-empty:before {
+  content: "👥";
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+/* Group items and group list for the image */
+.group-item {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  margin-bottom: 1.25rem;
+  position: relative;
+}
+
+.group-item-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.group-item-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0;
+}
+
+.group-item-description {
+  color: #4a5568;
+  margin-bottom: 1rem;
+}
+
+.group-item-meta {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.9rem;
+  color: #718096;
+}
+
+.group-item-footer {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.delete-group-btn {
+  background-color: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.delete-group-btn:hover {
+  background-color: #c53030;
 }
 
 /* List of groups styling */
 .groups-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin: 1rem 0;
-}
-
-/* Empty state */
-.groups-empty {
-  padding: 2rem;
-  text-align: center;
-  color: #666;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  margin: 1rem 0;
-}
-
-.dark-mode .groups-empty {
-  background-color: #2a2a2a;
-  color: #aaa;
+  gap: 1.25rem;
+  margin: 1.5rem 0;
 }
 
 /* Groups page styling */
 .groups-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #f8fafc;
+  padding-bottom: 3rem;
 }
 
 .groups-page.dark-mode {
-  background-color: #121212;
+  background-color: #111827;
   color: #e0e0e0;
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 2rem 1.5rem;
 }
 
 .groups-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.groups-header h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.dark-mode .groups-header h1 {
+  color: #f3f4f6;
 }
 
 .groups-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .create-group-btn {
-  padding: 0.5rem 1rem;
-  background-color: #4285f4;
+  padding: 0.6rem 1.2rem;
+  background-color: #3b82f6;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform 0.2s;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 .create-group-btn:hover {
-  background-color: #2b6ed9;
+  background-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4);
 }
 
-/* View toggle buttons */
+/* View toggle buttons - Improved */
 .view-toggle {
   display: flex;
-  margin-bottom: 1.5rem;
-  border-radius: 4px;
+  margin-bottom: 2rem;
+  border-radius: 12px;
   overflow: hidden;
   width: fit-content;
-  border: 1px solid #ddd;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  background-color: #fff;
 }
 
 .dark-mode .view-toggle {
-  border-color: #444;
+  border-color: #374151;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  background-color: #1f2937;
 }
 
 .view-toggle-btn {
-  padding: 0.5rem 1.5rem;
-  background-color: #f8f8f8;
-  color: #333;
+  padding: 0.75rem 2rem;
+  background-color: transparent;
+  color: #4b5563;
   border: none;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 0.95rem;
   transition: all 0.2s;
+  position: relative;
+  z-index: 1;
 }
 
 .dark-mode .view-toggle-btn {
-  background-color: #333;
-  color: #e0e0e0;
+  color: #d1d5db;
 }
 
 .view-toggle-btn.active {
-  background-color: #4285f4;
+  background-color: #4f46e5;
   color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(79, 70, 229, 0.3);
+}
+
+.dark-mode .view-toggle-btn.active {
+  background-color: #6366f1;
+  box-shadow: 0 2px 5px rgba(99, 102, 241, 0.3);
 }
 
 .view-toggle-btn:hover:not(.active) {
-  background-color: #e0e0e0;
+  background-color: #f9fafb;
+  color: #111827;
 }
 
 .dark-mode .view-toggle-btn:hover:not(.active) {
-  background-color: #555;
+  background-color: #2d3748;
+  color: #f7fafc;
+}
+
+/* Add a transition effect */
+.view-toggle-btn:before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 3px;
+  background-color: #4f46e5;
+  transform: translateX(-50%);
+  transition: width 0.2s ease;
+}
+
+.dark-mode .view-toggle-btn:before {
+  background-color: #6366f1;
+}
+
+.view-toggle-btn:hover:not(.active):before {
+  width: 30%;
+}
+
+.view-toggle-btn.active:before {
+  width: 70%;
 }
 
 .search-container {
@@ -285,24 +487,38 @@
 .search-input {
   flex: 1;
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem; /* left padding for icon */
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 0.85rem 1.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   font-size: 1rem;
   box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .dark-mode .search-input {
-  background-color: #333;
-  border-color: #444;
-  color: #e0e0e0;
+  background-color: #1f2937;
+  border-color: #374151;
+  color: #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .search-input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
 }
 
 /* Position the search icon inside the input */
 .search-icon {
   position: absolute;
   left: 12px;
-  color: #777;
+  color: #6b7280;
   pointer-events: none;
   font-size: 1.2em;
   height: 20px;
@@ -311,18 +527,26 @@
   z-index: 2;
 }
 
+.dark-mode .search-icon {
+  color: #9ca3af;
+}
+
 .search-btn {
-  padding: 0.75rem 1.5rem;
-  background-color: #4285f4;
+  padding: 0.85rem 1.75rem;
+  background-color: #3b82f6;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s ease;
 }
 
 .search-btn:hover {
-  background-color: #2b6ed9;
+  background-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(59, 130, 246, 0.4);
 }
 
 .error-message {
